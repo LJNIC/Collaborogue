@@ -4,6 +4,15 @@ local populateMap = require "defineLevel"
 
 local Level = Object:extend()
 
+---------
+local magic = 100
+function Level:newMap()
+  local map = ROT.Map.Brogue(magic - 11, 44)
+  return map
+end
+---------
+
+
 function Level:__new(map)
   self.actors = {}
   self.light = {}

@@ -56,7 +56,6 @@ function love.load()
   local display = Display:new(w, h, scale, nil, {1, 1, 1, 0}, nil, nil, true)
   local viewDisplay2x = Display:new(w2, h2, 2, nil, {.09, .09, .09}, nil, nil, true)
   local viewDisplay1x = Display:new(w, h, 1, nil, {.09, .09, .09}, nil, nil, true)
-  local map = ROT.Map.Brogue(display:getWidth() - 11, 44)
 
   game.music = MusicManager()
   game.display = display
@@ -67,7 +66,7 @@ function love.load()
 
   local interface = Interface(display)
   interface:push(Start(display, interface))
-  local level = Level(map)
+  local level = Level(Level:newMap())
 
   game.level = level
   game.interface = interface
@@ -147,8 +146,7 @@ function love.update(dt)
     -- The coroutine has not stopped running and returned "descend".
     -- It's time for us to load a new level.
     if ret == "descend" then
-      local map = ROT.Map.Brogue(game.display:getWidth() - 11, 44)
-      game.level = Level(map)
+      game.level = Level(Level:newMap())
       game.Player.explored = {}
     end
 
