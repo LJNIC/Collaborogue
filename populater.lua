@@ -1,4 +1,4 @@
-function Populater(level, map)
+local function Populater(level, map)
   local spawnedPrism = false
   local treasureRoom = false
   local store = false

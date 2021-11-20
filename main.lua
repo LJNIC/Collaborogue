@@ -1,4 +1,4 @@
-ROT = require 'src.rot'
+ROT = require 'rot.rot'
 MusicManager = require "musicmanager"
 vector22 = require "vector"
 
