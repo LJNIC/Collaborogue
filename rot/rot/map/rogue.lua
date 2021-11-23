@@ -44,7 +44,7 @@ end
 -- @tparam int callback.value A value representing the cell-type. 0==floor, 1==wall
 -- @treturn ROT.Map.Cellular|nil self or nil if time limit is reached
 function Rogue:create(callback)
-  self.map = self:_fillMap(1)
+  self._map = self:_fillMap(1)
   self._rooms = {}
   self.connectedCells = {}
 
@@ -57,7 +57,7 @@ function Rogue:create(callback)
   if not callback then return self end
   for y = 1, self._height do
     for x = 1, self._width do
-      callback(x, y, self.map[x][y])
+      callback(x, y, self._map[x][y])
     end
   end
   return self
@@ -240,7 +240,7 @@ function Rogue:_createRooms()
 
       for ii = sx, sx + roomw - 1 do
         for jj = sy, sy + roomh - 1 do
-          self.map[ii][jj] = 0
+          self._map[ii][jj] = 0
         end
       end
     end
@@ -259,7 +259,7 @@ function Rogue:_getWallPosition(aRoom, aDirection)
       ry = aRoom.y + aRoom.height + 1
       door = ry - 1
     end
-    self.map[rx][door] = 0
+    self._map[rx][door] = 0
     table.insert(self._doors, {x = rx, y = door})
   elseif aDirection == 2 or aDirection == 4 then
     local maxRy = aRoom.y + aRoom.height - 1
@@ -271,7 +271,7 @@ function Rogue:_getWallPosition(aRoom, aDirection)
       rx = aRoom.x - 2
       door = rx + 1
     end
-    self.map[door][ry] = 0
+    self._map[door][ry] = 0
     table.insert(self._doors, {x = door, y = ry})
   end
   return {rx, ry}
@@ -304,14 +304,14 @@ function Rogue:_drawCorridor(startPosition, endPosition)
   end
 
   local dirs = ROT.DIRS.EIGHT
-  self.map[xpos][ypos] = 0
+  self._map[xpos][ypos] = 0
   while #moves > 0 do
     local move = table.remove(moves)
     if move and move[1] and move[1] < 9 and move[1] > 0 then
       while move[2] > 0 do
         xpos = xpos + dirs[move[1]][1]
         ypos = ypos + dirs[move[1]][2]
-        self.map[xpos][ypos] = 0
+        self._map[xpos][ypos] = 0
         move[2] = move[2] - 1
       end
     end

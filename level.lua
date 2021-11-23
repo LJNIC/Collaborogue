@@ -1,6 +1,6 @@
 local Object = require "object"
 local Scheduler = require "scheduler"
-local populateMap = require "defineLevel"
+local populateMap = require "populater"
 
 local Level = Object:extend()
 
@@ -23,6 +23,7 @@ function Level:__new()
   self.fov = ROT.FOV.Recursive(self:getVisibilityCallback())
 
   -- let's create our map and fill it with the info from the supplied
+  
   -- rotLove map
 
 --
