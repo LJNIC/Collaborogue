@@ -66,7 +66,7 @@ function love.load()
 
   local interface = Interface(display)
   interface:push(Start(display, interface))
-  local level = Level(Level:newMap())
+  local level = Level()
 
   game.level = level
   game.interface = interface
@@ -146,7 +146,7 @@ function love.update(dt)
     -- The coroutine has not stopped running and returned "descend".
     -- It's time for us to load a new level.
     if ret == "descend" then
-      game.level = Level(Level:newMap())
+      game.level = Level()
       game.Player.explored = {}
     end
 

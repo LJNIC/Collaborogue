@@ -4,16 +4,10 @@ local populateMap = require "defineLevel"
 
 local Level = Object:extend()
 
----------
-local magic = 100
-function Level:newMap()
-  local map = ROT.Map.Brogue(magic - 11, 44)
-  return map
-end
----------
+
+function Level:__new()
 
 
-function Level:__new(map)
   self.actors = {}
   self.light = {}
   self.effectlight = {}
@@ -30,11 +24,15 @@ function Level:__new(map)
 
   -- let's create our map and fill it with the info from the supplied
   -- rotLove map
+
+--
   self.map = {}
-  self.width = map._width
-  self.height = map._height
-  map:create(self:getMapCallback())
-  populateMap(self, map)
+  self.map = populateMap(self)._map
+--
+
+
+  self.width = self.map._width
+  self.height = self.map._height
 
   -- Some initialization on the lighting
   self.lighting = ROT.Lighting(self:getLightReflectivityCallback(), {range = 50, passes = 3})

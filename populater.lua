@@ -1,4 +1,7 @@
-local function Populater(level, map)
+local function Populater(level)
+  local map = ROT.Map.Brogue(100 - 11, 44)
+  local map = map:create()
+
   local spawnedPrism = false
   local treasureRoom = false
   local store = false
@@ -186,6 +189,8 @@ local function Populater(level, map)
   end
 
   populateStartRoom(startRoom)
+
+  return map
 end
 
 return Populater
