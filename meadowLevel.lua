@@ -1,6 +1,8 @@
-local function Populater(level)
-  local map = ROT.Map.Rogue(100 - 11, 44)
-  local map = map:create()
+local MeadowGen = require "meadowGen"
+
+local function Meadow(level)
+  local map = MeadowGen(20, 20)
+  local map = map:_create()
 
   local function spawnActor(room, actor, x, y)
     local x, y = x or _x, y or _y
@@ -10,13 +12,12 @@ local function Populater(level)
   end
 
   local function populateStartRoom(room)
-    spawnActor(room, game.Player, 10, 10)
+    spawnActor(room, game.Player, 5, 5)
   end
 
-  local startRoom = table.remove(map._rooms, love.math.random(1, #map._rooms))
   populateStartRoom(startRoom)
 
   return map
 end
 
-return Populater
+return Meadow

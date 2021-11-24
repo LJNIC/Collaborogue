@@ -1,6 +1,6 @@
 local Object = require "object"
 local Scheduler = require "scheduler"
-local populateMap = require "populater"
+local populateMap = require "meadowLevel"
 
 local Level = Object:extend()
 
