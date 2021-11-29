@@ -62,6 +62,7 @@ function Meadow:_create()
   self:_shapeEdges()
   self:_blobs()
   self:_randomRoom()
+  self:_designateZoning("nest")
   return self
 end
 
@@ -167,7 +168,7 @@ function Meadow:_blobs()
   end
 end
 
-function Meadow:_room(xPrime, yPrime, width, height)
+function Meadow:_spawnRoom(xPrime, yPrime, width, height)
 
   for x = xPrime, xPrime + width do
     for y = yPrime, yPrime + width do
@@ -194,12 +195,38 @@ function Meadow:_randomRoom()
 
   local x = love.math.random(2, self._width - 8)
   local y = love.math.random(2, self._height - 8)
-  local height = 8
-  local width = 8
+  local height = 4
+  local width = 4
 
   table.insert(self._rooms, {x = x, y = y, width = width, height = height})
 
-  self:_room(x, y, width, height)
+  self:_spawnRoom(x, y, width, height)
+end
+
+function Meadow:_clearArea(x, y, width, height)
+
+  for i = x, x + width do
+    for j = y, y + height do
+      self._map[i][j] = 0
+    end
+  end
+
+end
+
+function Meadow:_designateZoning(name)
+  local x = love.math.random(2, self._width - 8)
+  local y = love.math.random(2, self._height - 8)
+  local height = 3
+  local width = 3
+
+
+  self._rooms[name] = {
+    x = x,
+    y = y,
+    width = width,
+    height = height
+  }
+  self:_clearArea(x, y, width, height)
 end
 
 return Meadow

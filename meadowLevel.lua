@@ -5,14 +5,14 @@ local function Meadow(level)
   local map = map:_create()
   local rooms = map._rooms
 
-  local function getRandomEmptySpace()
+  local function getRandomEmptySpaceWithinArea(x, y, width, height)
 
-    local x = nil
-    local y = nil
+    local x, y = x, y
+    local width, height = width, height
 
     repeat
-      x = love.math.random(1, map._width - 1)
-      y = love.math.random(1, map._height - 1)
+      x = love.math.random(x, width)
+      y = love.math.random(y, height)
     until map._map[x][y] == 0
 
     return x, y
@@ -46,9 +46,27 @@ local function Meadow(level)
     spawnDoors()
   end
 
-  spawnActor(game.Player, getRandomEmptySpace())
-  spawnActor(actors.Webweaver(), getRandomEmptySpace())
+  local function populateSpiderZone()
+    local room = rooms["nest"]
+    local width, height = room.width, room.height
+    local x1, y1 = room.x, room.y
+    local x2, y2 = room.x + room.width, room.y + room.height
+
+    for x = x1, x2 do
+      for y = y1, y2 do
+        if love.math.random() >= .6 then
+          spawnActor(actors.Web(), x, y)
+        end
+      end
+    end
+
+    spawnActor(actors.Webweaver(),
+               getRandomEmptySpaceWithinArea(x1, y1, x2, y2))
+  end
+
+  spawnActor(game.Player, getRandomEmptySpaceWithinArea(1, 1, map._width, map._height))
   populateStairRoom(rooms[1])
+  populateSpiderZone()
   return map
 end
 
