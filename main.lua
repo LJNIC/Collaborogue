@@ -35,6 +35,10 @@ loadItems("conditions", conditions, true)
 loadItems("actors", actors, true)
 Loot = require "loot"
 
+local levelOrder =
+  {"Meadow", "Meadow", "City", "Cave", "Nest"}
+levelOrder.num = 1
+
 local Level = require "level"
 local Interface = require "interface"
 local Display = require "display.display"
@@ -66,7 +70,8 @@ function love.load()
 
   local interface = Interface(display)
   interface:push(Start(display, interface))
-  local level = Level()
+  local level = Level(levelOrder[levelOrder.num])
+  levelOrder.num = levelOrder.num + 1
 
   game.level = level
   game.interface = interface
@@ -146,7 +151,8 @@ function love.update(dt)
     -- The coroutine has not stopped running and returned "descend".
     -- It's time for us to load a new level.
     if ret == "descend" then
-      game.level = Level()
+      game.level = Level(levelOrder[levelOrder.num])
+      levelOrder.num = levelOrder.num + 1
       game.Player.explored = {}
     end
 
@@ -159,7 +165,12 @@ function love.keypressed(key, scancode)
     game.interface.animating = false
     game.interface.effects = {}
     storedKeypress = {key, scancode}
-    return
+
+        return
+  end
+
+  if key == "esc" then
+    game.level.exit = true
   end
 
   storedKeypress = nil

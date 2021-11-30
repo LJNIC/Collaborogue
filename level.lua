@@ -1,11 +1,18 @@
 local Object = require "object"
 local Scheduler = require "scheduler"
-local populateMap = require "meadowLevel"
+
+local levels = {}
+levels.Meadow = require "meadowLevel"
+levels.City = require "cityLevel"
+levels.Cave = require "caveLevel"
+levels.Nest = require "nestLevel"
 
 local Level = Object:extend()
 
 
-function Level:__new()
+function Level:__new(mapType)
+  local mapType = levels[mapType]
+  --local mapType = levels["Cave"]
 
 
   self.actors = {}
@@ -28,7 +35,7 @@ function Level:__new()
 
 --
   self.map = {}
-  self.map = populateMap(self)._map
+  self.map = mapType(self)._map
 --
 
 

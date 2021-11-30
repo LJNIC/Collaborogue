@@ -1,22 +1,9 @@
 local MeadowGen = require "meadowGen"
 
 local function Meadow(level)
-  local map = MeadowGen(80, 40)
+  local map = MeadowGen(40, 40)
   local map = map:_create()
   local rooms = map._rooms
-
-  local function getRandomEmptySpaceWithinArea(x, y, width, height)
-
-    local x, y = x, y
-    local width, height = width, height
-
-    repeat
-      x = love.math.random(x, width)
-      y = love.math.random(y, height)
-    until map._map[x][y] == 0
-
-    return x, y
-  end
 
   local function spawnActor(actor, x, y)
     local x, y = x or _x, y or _y
@@ -27,19 +14,19 @@ local function Meadow(level)
 
   local function populateStairRoom(room)
     local function spawnStairs()
-      local x = room.x + (room.width/2)
-      local y = room.y + (room.height/2)
+      local x = room.x1 + (room.width/2)
+      local y = room.y1 + (room.height/2)
       spawnActor(actors.Stairs(), x, y)
     end
 
     local function spawnDoors()
-      local centerX = room.x + (room.width/2)
-      local centerY = room.y + (room.height/2)
+      local centerX = room.x1 + (room.width/2)
+      local centerY = room.y1 + (room.height/2)
 
-      spawnActor(actors.Door(), room.x, centerY)
-      spawnActor(actors.Door(), centerX, room.y)
-      spawnActor(actors.Door(), room.x + room.width, centerY)
-      spawnActor(actors.Door(), centerX, room.y + room.height)
+      spawnActor(actors.Door(), room.x1, centerY)
+      spawnActor(actors.Door(), centerX, room.y1)
+      spawnActor(actors.Door(), room.x1 + room.width, centerY)
+      spawnActor(actors.Door(), centerX, room.y1 + room.height)
     end
 
     spawnStairs()
@@ -49,8 +36,8 @@ local function Meadow(level)
   local function populateSpiderZone()
     local room = rooms["nest"]
     local width, height = room.width, room.height
-    local x1, y1 = room.x, room.y
-    local x2, y2 = room.x + room.width, room.y + room.height
+    local x1, y1 = room.x1, room.y1
+    local x2, y2 = room.x1 + room.width, room.y1 + room.height
 
     for x = x1, x2 do
       for y = y1, y2 do
@@ -60,13 +47,12 @@ local function Meadow(level)
       end
     end
 
-    spawnActor(actors.Webweaver(),
-               getRandomEmptySpaceWithinArea(x1, y1, x2, y2))
+    spawnActor(actors.Webweaver(), 10, 10)
   end
 
-  spawnActor(game.Player, getRandomEmptySpaceWithinArea(1, 1, map._width, map._height))
+  spawnActor(game.Player, 20,20)
   populateStairRoom(rooms[1])
-  populateSpiderZone()
+  --populateSpiderZone()
   return map
 end
 
