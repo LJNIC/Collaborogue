@@ -10,8 +10,16 @@ end
 
 function MoveAction:perform(level)
   local newPosition = self.owner.position + self.direction
-  if level:getCellPassable(newPosition.x, newPosition.y) then
+  local passable, atPosition = level:getCellPassable(newPosition.x, newPosition.y) 
+
+  if passable then
     level:moveActor(self.owner, newPosition)
+
+    for _, actor in ipairs(atPosition) do
+      if actor:hasComponent(components.Contact) then
+        level:performAction(actor:getReaction(reactions.Contact)(actor, self.owner))
+      end
+    end
   end
 end
 

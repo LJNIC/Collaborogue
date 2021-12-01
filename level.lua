@@ -524,13 +524,17 @@ function Level:getCellPassable(x, y)
   if not (self:getCell(x, y) == 0) then
     return false
   else
+    local atPosition = {}
     for actor in self:eachActor() do
-      if actor.position.x == x and actor.position.y == y and actor.passable == false then
-        return false
+      if actor.position.x == x and actor.position.y == y then
+         table.insert(atPosition, actor)
+         if not actor.passable then
+            return false, atPosition
+         end
       end
     end
 
-    return true
+    return true, atPosition
   end
 end
 

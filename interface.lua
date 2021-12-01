@@ -140,9 +140,7 @@ function Interface:draw()
 
   local function getAnimationChar(actor)
     if not actor:hasComponent(components.Animated) then return actor.char end
-    print(game.waiting)
       if self.t > 0.400 then
-        print "YEET"
         return actor.char+16
       end
 
@@ -165,7 +163,6 @@ function Interface:draw()
   local function drawActors(actorTable, conditional)
     for k, actor in pairs(actorTable) do
       local char = getAnimationChar(actor)
-      print(char)
       if conditional and conditional(actor) or true then
         local x, y = actor.position.x, actor.position.y
         if actorTable ~= scryActors and light[x] and light[x][y] then
