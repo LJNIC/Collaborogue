@@ -1,13 +1,12 @@
 ROT = require 'rot.rot'
-MusicManager = require "musicmanager"
-vector22 = require "vector"
+local MusicManager = require "musicmanager"
 
 conditions = {}
 reactions = {}
 actions = {}
 components = {}
 actors = {}
-effects = require "effects"
+local effects = require "effects"
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 local function loadItems(directoryName, items, recurse)
@@ -167,10 +166,6 @@ function love.keypressed(key, scancode)
     storedKeypress = {key, scancode}
 
         return
-  end
-
-  if key == "esc" then
-    game.level.exit = true
   end
 
   storedKeypress = nil
