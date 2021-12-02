@@ -6,7 +6,7 @@ reactions = {}
 actions = {}
 components = {}
 actors = {}
-local effects = require "effects"
+effects = require "effects"
 
 love.graphics.setDefaultFilter("nearest", "nearest")
 local function loadItems(directoryName, items, recurse)

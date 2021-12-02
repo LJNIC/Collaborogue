@@ -51,6 +51,7 @@ local function Meadow(level)
   end
 
   spawnActor(game.Player, 20,20)
+  spawnActor(actors.Sqeeto(), 21,21)
   populateStairRoom(rooms[1])
   --populateSpiderZone()
   return map
