@@ -10,7 +10,7 @@ Longsword.components = {
   components.Weapon{
     stat = "ATK",
     name = "Longsword",
-    dice = "1d8",
+    dmgMod = 1,
     time = 100
   }
 }

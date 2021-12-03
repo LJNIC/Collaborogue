@@ -28,7 +28,7 @@ function Zap:perform(level)
   local target = self.targetActors[2]
 
   local fov, actors = level:getAOE("fov", target, self.aoeRange)
-  local damage = ROT.Dice.roll("2d6")
+  local damage = 1
   table.insert(level.temporaryLights, FireballLightEffect(target.x, target.y, 0.6))
   level:addEffect(effects.ExplosionEffect(fov, target, self.aoeRange))
 

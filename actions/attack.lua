@@ -15,16 +15,16 @@ end
 
 function Attack:perform(level)
   local weapon = self.weapon
-  local weaponBonus = weapon.bonus or 0
-  local bonus = self.owner:getStatBonus(weapon.stat) + weaponBonus + self.attackBonus
-  local naturalRoll = self.owner:rollCheck(weapon.stat)
-  local roll = naturalRoll + bonus
-
   local target = self:getTarget(1)
-  local dmg = ROT.Dice.roll(weapon.dice) + self.owner:getStatBonus(weapon.stat)
 
-  local critical = naturalRoll >= self.criticalOn
-  if roll >= target:getAC() or critical then
+  --All attacks now deal stat + dmgMod
+  local dmg = weapon.dmgMod + self.owner:getStatBonus(weapon.stat)
+
+  --All attacks now have a 1/20 crit rate
+  local critical = love.math.random() <= 0.05
+
+  --All attacks now have a 0.95% hit rate
+  if love.math.random() <= 0.95 then
     self.hit = true
     if critical then
       dmg = dmg * 2

@@ -10,7 +10,7 @@ Explode.color = {0.8 * 3, 0.8 * 3, 0.1 * 3}
 Explode:afterAction(actions.Throw,
   function(self, level, actor, action)
     local fov, actors = level:getAOE("fov", actor.position, Explode.range)
-	local damage = ROT.Dice.roll("6d6")
+	local damage = 1
 
   level:destroyActor(actor)
   table.insert(level.temporaryLights, effects.LightEffect(actor.position.x, actor.position.y, 0.6, Explode.color))

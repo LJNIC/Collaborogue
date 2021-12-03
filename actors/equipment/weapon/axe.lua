@@ -48,7 +48,7 @@ Axe.components = {
   components.Weapon{
     stat = "ATK",
     name = "Axe",
-    dice = "2d6",
+    dmgMod = 1,
     time = 150,
     effects = {
       Swing 

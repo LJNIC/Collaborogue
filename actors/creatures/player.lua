@@ -20,7 +20,7 @@ Player.components = {
 
   components.Stats
   {
-    ATK = 0,
+    ATK = 1,
     MGK = 0,
     PR = 0,
     MR = 0,
@@ -36,7 +36,7 @@ Player.components = {
     {
       name = "Stronk Fists",
       stat = "ATK",
-      dice = "1d1"
+      dmgMod = 1
     }
   },
 

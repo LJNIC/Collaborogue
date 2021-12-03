@@ -12,7 +12,7 @@ ZapTarget.positional = false
 local ZapWeapon = {
   stat = "MGK",
   name = "Wand of Blastin'",
-  dice = "1d8",
+  dmgMod = 1,
 }
 
 local Zap = actions.Zap:extend()

@@ -10,7 +10,7 @@ Dagger.components = {
   components.Weapon{
     stat = "ATK",
     name = "Dagger",
-    dice = "1d4",
+    dmgMod = 1,
     time = 50
   }
 }

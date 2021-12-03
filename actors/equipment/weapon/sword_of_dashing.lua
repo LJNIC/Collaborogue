@@ -66,7 +66,7 @@ Sword.components = {
   components.Weapon{
     stat = "ATK",
     name = "Sword of Dashing",
-    dice = "1d6",
+    dmgMod = 1,
     effects = {Dash()}
   },
   components.Cost{rarity = "common"}

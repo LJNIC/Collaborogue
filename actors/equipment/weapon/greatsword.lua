@@ -10,7 +10,7 @@ Greatsword.components = {
   components.Weapon{
     stat = "ATK",
     name = "Greatsword",
-    dice = "2d6",
+    dmgMod = 1,
     time = 150
   }
 }

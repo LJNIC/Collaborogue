@@ -20,7 +20,7 @@ function Shoot:perform(level)
   end
 
   local target = self.targetActors[2]
-  local damageAmount = ROT.Dice.roll("1d6")
+  local damageAmount = 1
 
   if targets.Creature:checkRequirements(target) then
     local damage = target:getReaction(reactions.Damage)(target, {self.owner}, damageAmount, self.targetActors[1])

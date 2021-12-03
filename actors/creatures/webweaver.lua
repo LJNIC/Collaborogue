@@ -27,7 +27,7 @@ Webweaver.components = {
     {
       name = "Fangs",
       stat = "ATK",
-      dice = "1d2",
+      dmgMod = 1,
     }
   },
 

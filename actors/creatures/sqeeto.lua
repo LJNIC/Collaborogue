@@ -27,7 +27,7 @@ Sqeeto.components = {
     {
       name = "Probiscus",
       stat = "ATK",
-      dice = "1d1"
+      dmgMod = 1
     }
   },
 
