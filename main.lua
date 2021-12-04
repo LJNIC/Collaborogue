@@ -36,7 +36,6 @@ Loot = require "loot"
 
 local levelOrder =
   {"Meadow", "Meadow", "City", "Cave", "Nest"}
-levelOrder.num = 1
 
 local Level = require "level"
 local Interface = require "interface"
@@ -47,7 +46,7 @@ local Start = require "panels.start"
 -- Global
 
 game = {}
-
+game.levelOrderNum = 1
 
 function love.load()
   min_dt = 1/30 --fps
@@ -69,20 +68,17 @@ function love.load()
 
   local interface = Interface(display)
   interface:push(Start(display, interface))
-  local level = Level(levelOrder[levelOrder.num])
-  levelOrder.num = levelOrder.num + 1
+  local level = Level(levelOrder[game.levelOrderNum])
+  game.levelOrderNum = game.levelOrderNum + 1
 
   game.level = level
   game.interface = interface
 
   local player = game.Player
   game.curActor = player
-  table.insert(player.inventory, actors.Wand_of_displacement())
-  table.insert(player.inventory, actors.Robe_of_wonders())
-  table.insert(player.inventory, actors.Circlet_of_channeling())
-  table.insert(player.inventory, actors.Prism())
-  table.insert(player.inventory, actors.Axe())
-  table.insert(player.inventory, actors.Potion_of_focus())
+  table.insert(player.inventory, actors.Scroll_of_allsight())
+  table.insert(player.inventory, actors.Scroll_of_mulligan())
+
 
   love.keyboard.setKeyRepeat(true)
 end
@@ -150,8 +146,8 @@ function love.update(dt)
     -- The coroutine has not stopped running and returned "descend".
     -- It's time for us to load a new level.
     if ret == "descend" then
-      game.level = Level(levelOrder[levelOrder.num])
-      levelOrder.num = levelOrder.num + 1
+      game.level = Level(levelOrder[game.levelOrderNum])
+      game.levelOrderNum = game.levelOrderNum + 1
       game.Player.explored = {}
     end
 
