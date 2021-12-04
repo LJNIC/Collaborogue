@@ -403,7 +403,8 @@ function Level:performAction(action, free, animationToPlay)
   -- if this isn't a reaction or free action and the level contains the acting actor
   -- we update it's place in the scheduler
   if not action.reaction and not free and self:hasActor(action.owner) then
-    self.scheduler:addTime(action.owner, action.time)
+    --action.time replaced with flat value
+    self.scheduler:addTime(action.owner, 100)
   end
 
   self:addEffect(self.effectAfterAction)
