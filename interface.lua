@@ -236,10 +236,11 @@ Interface.movementTranslation = {
   d = Vector2(1, 0),
 
   -- diagonal
-  q = Vector2(-1, - 1),
-  e = Vector2(1, - 1),
-  z = Vector2(-1, 1),
-  c = Vector2(1, 1)
+  -- removd diagonal input options
+  --q = Vector2(-1, - 1),
+  --e = Vector2(1, - 1),
+  --z = Vector2(-1, 1),
+  --c = Vector2(1, 1)
 }
 
 Interface.keybinds = {
