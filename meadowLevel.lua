@@ -1,8 +1,8 @@
 local MeadowGen = require "meadowGen"
 
 local function Meadow(level)
-  local map = MeadowGen(40, 40)
-  local map = map:_create()
+  local Gen = MeadowGen(40, 40)
+  local map = Gen:_create()
   local rooms = map._rooms
 
   local function spawnActor(actor, x, y)
