@@ -7,7 +7,7 @@ Web.targets = {targets.Creature}
 
 function Web:perform(level)
   local creature = self.targetActors[1]
-  creature:applyCondition(conditions.Slowed)
+  creature:applyCondition(conditions.Webbed)
   level:addEffect(effects.CharacterDynamic(creature, 0, 0, Tiles["web"], {1, 1, 1}, .5))
 end
 

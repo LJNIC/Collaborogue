@@ -393,6 +393,9 @@ function Level:performAction(action, free, animationToPlay)
 
   self:triggerActionEvents("onActions", action)
 
+  -- conditions are able to cancel an action
+  if action.cancelled then return end
+
   self:addMessage(action)
   action:perform(self)
 

@@ -8,7 +8,7 @@ Web.name = "Web"
 Web.color = { 1, 1, 1, 1}
 
 Web.components = {
-   components.Contact{ effects = { conditions.Slowed() } }
+   components.Contact{ effects = { conditions.Webbed() } }
 }
 
 return Web

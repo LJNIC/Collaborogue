@@ -1,10 +1,10 @@
 local Condition = require "condition"
 
-local Webbed = Condition:extend()
-Webbed.name = "Webbed"
-Webbed.description = "Your movement is 100 slower. Your attacks are 25 slower."
+local Slowed = Condition:extend()
+Slowed.name = "Slowed"
+Slowed.description = "Your movement is 100 slower. Your attacks are 25 slower."
 
-Webbed:onAction(actions.Move,
+Slowed:onAction(actions.Move,
   function(self, level, actor, action)
     if actor:rollCheck("PR") >= 13 then
       actor:removeCondition(self)
@@ -14,10 +14,10 @@ Webbed:onAction(actions.Move,
   end
 )
 
-Webbed:onAction(actions.Attack,
+Slowed:onAction(actions.Attack,
   function(self, level, actor, action)
     action.time = action.time + 25
   end
 )
 
-return Webbed
+return Slowed
