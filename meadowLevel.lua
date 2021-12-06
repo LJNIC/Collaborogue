@@ -50,10 +50,15 @@ local function Meadow(level)
     spawnActor(actors.Webweaver(), 10, 10)
   end
 
-  spawnActor(game.Player, 20,20)
-  spawnActor(actors.Glowshroom(), 20,21)
-  spawnActor(actors.Sqeeto(), 25,25)
-  populateStairRoom(rooms[1])
+  for k, v in pairs(map._markers) do
+    if k == "player" then
+      spawnActor(game.Player, v.x, v.y)
+    end
+    if k == "stairs" then
+      spawnActor(actors.Stairs(), v.x, v.y)
+    end
+  end
+
   populateSpiderZone()
   return map
 end

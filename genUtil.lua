@@ -22,7 +22,7 @@ function Gen:_posIsInArea(x,y, xMin,yMin, xMax,yMax)
   end
 end
 function Gen:_posIsInMap(x,y)
-  return Gen:_posIsInArea(x,y, 2,2, self._width-1,self._height-1)
+  return Gen:_posIsInArea(x,y, 1,1, self._width,self._height)
 end
 
 
@@ -117,6 +117,7 @@ function Gen:_markSpace(x, y, thingStr)
   markers[thingStr] = markers[thingStr] or {}
 
   self._markedMap[x][y] = thingStr
+  self._markers[thingStr] = {x=x, y=y}
   table.insert(markers[thingStr], {x=x, y=y})
 end
 
