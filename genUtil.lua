@@ -184,7 +184,7 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
 end
 
 
-function Gen:_dijkstra(x, y)
+function Gen:_dijkstra(x, y, path)
   local vonNeuman = {
     n = {0, -1},
     e = {1, 0},
@@ -201,19 +201,26 @@ function Gen:_dijkstra(x, y)
     end
   end
 
-  local centerX, centerY = self._width-20, self._height-20
-  local startX, startY = x or centerX, y or centerY
+  if path == nil then
+    
+    local centerX, centerY = self._width-20, self._height-20
+    local startX, startY = x or centerX, y or centerY
 
-  if self._map[startX][startY] == 0 then
-    dMap[startX][startY] = 0
+    if self._map[startX][startY] == 0 then
+      dMap[startX][startY] = 0
+    else
+      repeat
+        startX = math.max(math.min(startX + love.math.random(-5, 5), self._width), 1)
+        startY = math.max(math.min(startY + love.math.random(-5, 5), self._width), 1)
+      until self._map[startX][startY] == 0
+      dMap[startX][startY] = 0
+    end
+
   else
-    repeat
-      startX = math.max(math.min(startX + love.math.random(-5, 5), self._width), 1)
-      startY = math.max(math.min(startY + love.math.random(-5, 5), self._width), 1)
-    until self._map[startX][startY] == 0
-    dMap[startX][startY] = 0
+    for i, v in ipairs(path) do
+      dMap[v.x][v.y] = 0
+    end
   end
-
 
   local function hell()
     local function updateMDV(mdv, x, y)
@@ -282,5 +289,117 @@ function Gen:_dijkstra(x, y)
   return dMap, sptSet
 end
 
+function Gen:_aStar(x1,y1, x2,y2)
+
+  local vonNeuman = {
+    n = {0, -1},
+    e = {1, 0},
+    s = {0, 1},
+    w = {-1, 0},
+  }
+
+  local aMap = {}
+  for x = 1, self._width do
+    aMap[x] = {}
+    for y = 1, self._height do
+      aMap[x][y] = 0
+    end
+  end
+
+  local toTravel = {}
+  local travelled = {}
+  local function MDistance(x1,y1, x2,y2)
+    return math.abs(x1 - x2) + math.abs(y1 - y2)
+  end
+
+  local SEMDistance = MDistance(x1,y1, x2,y2)
+  local startNode = {x = x1, y = y1, s = 0, e = SEMDistance, t = SEMDistance}
+  table.insert(toTravel, startNode)
+
+  while true do
+    local nextNode = nil
+    local nodeIndex = nil
+
+    for i, v in ipairs(toTravel) do
+      if aMap[v.x][v.y] == 0 then
+
+        if nextNode == nil then
+          nextNode = v
+          nodeIndex = i
+        elseif  v.t < nextNode.t then
+          nextNode = v
+          nodeIndex = i
+        elseif v.t == nextNode.t and v.e < nextNode.e then
+          nextNode = v
+          nodeIndex = i
+        end
+
+      end
+    end
+
+    table.remove(toTravel, nodeIndex)
+    table.insert(travelled, nextNode)
+    aMap[nextNode.x][nextNode.y] = nextNode.s
+
+    if nextNode.x == x2 and nextNode.y == y2 then
+      break
+    end
+
+    for k, v in pairs(vonNeuman) do
+      if self:_posIsInMap(nextNode.x + v[1], nextNode.y + v[2]) then
+        if self._map[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
+          local newNode = {}
+          newNode.x = nextNode.x + v[1]
+          newNode.y = nextNode.y + v[2]
+          newNode.s = nextNode.s + 1
+          newNode.e = MDistance(newNode.x,newNode.y, x2,y2)
+          newNode.t = newNode.s + newNode.e
+
+          local match = nil
+          for i, v in ipairs(toTravel) do
+            if v.x == newNode.x and v.y == newNode.y then
+              match = {s = v.s, i = i}
+            end
+          end
+
+          if match ~= nil then
+            if match.s > newNode.s then
+              table.remove(toTravel, match.i)
+              table.insert(toTravel, newNode)
+            end
+          else
+            table.insert(toTravel, newNode)
+          end
+
+        end
+      end
+    end
+  end
+
+
+  local aPath = {}
+
+  local furthestS = -1
+  for i, v in ipairs(travelled) do
+    if v.s > furthestS then
+      furthestS = v.s
+    end
+  end
+
+  local endNode = {x = x2, y = y2, s = furthestS, e = 0, t = furthestS}
+  table.insert(aPath, endNode)
+
+  while #aPath ~= furthestS + 1  do
+    for i, v in ipairs(travelled) do
+      if v.s == aPath[#aPath].s - 1 then
+        if MDistance(v.x, v.y, aPath[#aPath].x, aPath[#aPath].y) == 1  then
+          table.insert(aPath, v)
+        end
+      end
+    end
+  end
+
+  return aPath
+end
 
 return Gen

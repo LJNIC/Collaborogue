@@ -58,6 +58,20 @@ local function Meadow(level)
     end
   end
 
+  local function heatMap()
+    for x, v in ipairs(map._heatMap) do
+      for y, w in ipairs(v) do
+        if w == 0 then
+          spawnActor(actors.Glowshroom(), x, y)
+        end
+
+        if w > 10 and w < 999 then
+          spawnActor(actors.Web(), x, y)
+        end
+      end
+    end
+  end
+
   for k, v in pairs(map._markers) do
     if k == "player" then
       spawnActor(game.Player, v.x, v.y)
@@ -68,7 +82,8 @@ local function Meadow(level)
   end
 
 
-  shroomPath()
+  --shroomPath()
+  heatMap()
   --populateSpiderZone()
   return map
 end
