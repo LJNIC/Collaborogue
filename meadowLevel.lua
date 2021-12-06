@@ -52,7 +52,7 @@ local function Meadow(level)
 
   local function shroomPath()
     for i, v in ipairs(map._aPath) do
-      if i ~= 1 and i ~= #map._aPath then
+      if i ~= 1 then
         spawnActor(actors.Glowshroom(), v.x, v.y)
       end
     end

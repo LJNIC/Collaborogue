@@ -24,6 +24,10 @@ function Meadow:_create()
                             self._markers["stairs"].x,self._markers["stairs"].y
   )
 
+  --self._aPath = self:_generateHeatMap(self._markers["player"].x,self._markers["player"].y,
+  --                                    self._markers["stairs"].x,self._markers["stairs"].y
+  --)
+
   self:_designateZoning(15, 15, 3, 3, "nest")
   return self
 end
@@ -93,6 +97,7 @@ function Meadow:_aStar(x1,y1, x2,y2)
   end
 
   local toTravel = {}
+  local travelled = {}
   local function MDistance(x1,y1, x2,y2)
     return math.abs(x1 - x2) + math.abs(y1 - y2)
   end
@@ -123,6 +128,7 @@ function Meadow:_aStar(x1,y1, x2,y2)
     end
 
     table.remove(toTravel, nodeIndex)
+    table.insert(travelled, nextNode)
     aMap[nextNode.x][nextNode.y] = nextNode.s
 
     if nextNode.x == x2 and nextNode.y == y2 then
@@ -160,29 +166,35 @@ function Meadow:_aStar(x1,y1, x2,y2)
     end
   end
 
-  local aPath = {{x=x2,y=y2},}
 
-  while aPath[#aPath].x ~= x1 and aPath[#aPath].y ~= y1 do
-    local nextSpot = nil
-    local lastSpot = aPath[#aPath]
+  local aPath = {}
 
+  local furthestS = -1
+  for i, v in ipairs(travelled) do
+    if v.s > furthestS then
+      furthestS = v.s
+    end
+  end
 
-    local targetValue = aMap[lastSpot.x][lastSpot.y] - 1
+  local endNode = {x = x2, y = y2, s = furthestS, e = 0, t = furthestS}
+  table.insert(aPath, endNode)
 
-    for k, v in pairs(vonNeuman) do
-      local x,y = lastSpot.x+v[1],lastSpot.y+v[2]
-      if aMap[x][y] == targetValue then
-        nextSpot = {x=x, y=y}
+  while #aPath ~= furthestS + 1  do
+    for i, v in ipairs(travelled) do
+      if v.s == aPath[#aPath].s - 1 then
+        if MDistance(v.x, v.y, aPath[#aPath].x, aPath[#aPath].y) == 1  then
+          table.insert(aPath, v)
+        end
       end
     end
-
-    table.insert(aPath, nextSpot)
   end
 
   return aPath
 end
 
+function Meadow:_generateHeatMap()
 
+end
 
 --
 
