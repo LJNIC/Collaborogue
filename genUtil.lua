@@ -184,4 +184,103 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
 end
 
 
+function Gen:_dijkstra(x, y)
+  local vonNeuman = {
+    n = {0, -1},
+    e = {1, 0},
+    s = {0, 1},
+    w = {-1, 0},
+  }
+
+  local sptSet = {}
+  local dMap = {}
+  for x = 1, self._width do
+    dMap[x] = {}
+    for y = 1, self._height do
+      dMap[x][y] = 999
+    end
+  end
+
+  local centerX, centerY = self._width-20, self._height-20
+  local startX, startY = x or centerX, y or centerY
+
+  if self._map[startX][startY] == 0 then
+    dMap[startX][startY] = 0
+  else
+    repeat
+      startX = math.max(math.min(startX + love.math.random(-5, 5), self._width), 1)
+      startY = math.max(math.min(startY + love.math.random(-5, 5), self._width), 1)
+    until self._map[startX][startY] == 0
+    dMap[startX][startY] = 0
+  end
+
+
+  local function hell()
+    local function updateMDV(mdv, x, y)
+      mdv.v = dMap[x][y]
+      mdv.x = x
+      mdv.y = y
+
+      return mdv
+    end
+
+    while true do
+      local mdv = {}
+
+      for x = 1, self._width do
+        for y = 1, self._height do
+
+          if self._map[x][y] ~= 1 then
+            local skip = false
+
+            if #sptSet ~= 0 then
+              for i, v in ipairs(sptSet) do
+                if v.x == x and v.y == y then
+                  skip = true
+                end
+              end
+            end
+
+            if skip == false then
+              if
+                mdv.v == nil or mdv.v > dMap[x][y]
+              then
+                mdv = updateMDV(mdv, x, y)
+              end
+            end
+
+          end
+        end
+      end
+
+      if mdv.x == nil then
+        break
+      end
+
+      table.insert(sptSet, mdv)
+      for i, v in pairs(vonNeuman) do
+        if self:_posIsInMap(mdv.x + v[1], mdv.y + v[2]) then
+          if self._map[mdv.x+v[1]][mdv.y+v[2]] ~= 1 then
+            dMap[mdv.x + v[1]][mdv.y + v[2]] = math.min(mdv.v + 1, dMap[mdv.x+v[1]][mdv.y+v[2]])
+          end
+        end
+      end
+
+    end
+  end
+
+  hell()
+
+  for x, v in ipairs(dMap) do
+    for y, w in ipairs(v) do
+      if w == 999 then
+        self._map[x][y] = 1
+      end
+    end
+  end
+
+  return dMap, sptSet
+end
+
+
 return Gen

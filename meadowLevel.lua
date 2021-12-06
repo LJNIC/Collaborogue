@@ -50,6 +50,14 @@ local function Meadow(level)
     spawnActor(actors.Webweaver(), 10, 10)
   end
 
+  local function shroomPath()
+    for i, v in ipairs(map._aPath) do
+      if i ~= 1 and i ~= #map._aPath then
+        spawnActor(actors.Glowshroom(), v.x, v.y)
+      end
+    end
+  end
+
   for k, v in pairs(map._markers) do
     if k == "player" then
       spawnActor(game.Player, v.x, v.y)
@@ -59,7 +67,9 @@ local function Meadow(level)
     end
   end
 
-  populateSpiderZone()
+
+  shroomPath()
+  --populateSpiderZone()
   return map
 end
 

@@ -20,6 +20,10 @@ function Meadow:_create()
 
   self:_designateStairsSpawn()
 
+  self._aPath = self:_aStar(self._markers["player"].x,self._markers["player"].y,
+                            self._markers["stairs"].x,self._markers["stairs"].y
+  )
+
   self:_designateZoning(15, 15, 3, 3, "nest")
   return self
 end
@@ -71,7 +75,8 @@ end
 
 --
 
-function Meadow:_dijkstra(x, y)
+function Meadow:_aStar(x1,y1, x2,y2)
+
   local vonNeuman = {
     n = {0, -1},
     e = {1, 0},
@@ -79,96 +84,107 @@ function Meadow:_dijkstra(x, y)
     w = {-1, 0},
   }
 
-  local sptSet = {}
-  local dMap = {}
+  local aMap = {}
   for x = 1, self._width do
-    dMap[x] = {}
+    aMap[x] = {}
     for y = 1, self._height do
-      dMap[x][y] = 999
+      aMap[x][y] = 0
     end
   end
 
-  local centerX, centerY = self._width-20, self._height-20
-  local startX, startY = x or centerX, y or centerY
-
-  if self._map[startX][startY] == 0 then
-    dMap[startX][startY] = 0
-  else
-    repeat
-      startX = startX + love.math.random(-5, 5)
-      startY = startY + love.math.random(-5, 5)
-    until self._map[startX][startY] == 0
-    dMap[startX][startY] = 0
+  local toTravel = {}
+  local function MDistance(x1,y1, x2,y2)
+    return math.abs(x1 - x2) + math.abs(y1 - y2)
   end
 
+  local SEMDistance = MDistance(x1,y1, x2,y2)
+  local startNode = {x = x1, y = y1, s = 0, e = SEMDistance, t = SEMDistance}
+  table.insert(toTravel, startNode)
 
-  local function hell()
-    local function updateMDV(mdv, x, y)
-      mdv.v = dMap[x][y]
-      mdv.x = x
-      mdv.y = y
+  while true do
+    local nextNode = nil
+    local nodeIndex = nil
 
-      return mdv
+    for i, v in ipairs(toTravel) do
+      if aMap[v.x][v.y] == 0 then
+
+        if nextNode == nil then
+          nextNode = v
+          nodeIndex = i
+        elseif  v.t < nextNode.t then
+          nextNode = v
+          nodeIndex = i
+        elseif v.t == nextNode.t and v.e < nextNode.e then
+          nextNode = v
+          nodeIndex = i
+        end
+
+      end
     end
 
-    while true do
-      local mdv = {}
+    table.remove(toTravel, nodeIndex)
+    aMap[nextNode.x][nextNode.y] = nextNode.s
 
-      for x = 1, self._width do
-        for y = 1, self._height do
+    if nextNode.x == x2 and nextNode.y == y2 then
+      break
+    end
 
-          if self._map[x][y] ~= 1 then
-            local skip = false
+    for k, v in pairs(vonNeuman) do
+      if self:_posIsInMap(nextNode.x + v[1], nextNode.y + v[2]) then
+        if self._map[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
+          local newNode = {}
+          newNode.x = nextNode.x + v[1]
+          newNode.y = nextNode.y + v[2]
+          newNode.s = nextNode.s + 1
+          newNode.e = MDistance(newNode.x,newNode.y, x2,y2)
+          newNode.t = newNode.s + newNode.e
 
-            if #sptSet ~= 0 then
-              for i, v in ipairs(sptSet) do
-                if v.x == x and v.y == y then
-                  skip = true
-                end
-              end
+          local match = nil
+          for i, v in ipairs(toTravel) do
+            if v.x == newNode.x and v.y == newNode.y then
+              match = {s = v.s, i = i}
             end
-
-            if skip == false then
-              if
-                mdv.v == nil or mdv.v > dMap[x][y]
-              then
-                mdv = updateMDV(mdv, x, y)
-              end
-            end
-
           end
+
+          if match ~= nil then
+            if match.s > newNode.s then
+              table.remove(toTravel, match.i)
+              table.insert(toTravel, newNode)
+            end
+          else
+            table.insert(toTravel, newNode)
+          end
+
         end
       end
-
-      if mdv.x == nil then
-        break
-      end
-
-      table.insert(sptSet, mdv)
-      for i, v in pairs(vonNeuman) do
-        if self:_posIsInMap(mdv.x + v[1], mdv.y + v[2]) then
-          if self._map[mdv.x+v[1]][mdv.y+v[2]] ~= 1 then
-            dMap[mdv.x + v[1]][mdv.y + v[2]] = math.min(mdv.v + 1, dMap[mdv.x+v[1]][mdv.y+v[2]])
-          end
-        end
-      end
-
     end
   end
 
-  hell()
+  local aPath = {{x=x2,y=y2},}
 
-  for x, v in ipairs(dMap) do
-    for y, w in ipairs(v) do
-      if w == 999 then
-        self._map[x][y] = 1
+  while aPath[#aPath].x ~= x1 and aPath[#aPath].y ~= y1 do
+    local nextSpot = nil
+    local lastSpot = aPath[#aPath]
+
+
+    local targetValue = aMap[lastSpot.x][lastSpot.y] - 1
+
+    for k, v in pairs(vonNeuman) do
+      local x,y = lastSpot.x+v[1],lastSpot.y+v[2]
+      if aMap[x][y] == targetValue then
+        nextSpot = {x=x, y=y}
       end
     end
+
+    table.insert(aPath, nextSpot)
   end
 
-  return dMap, sptSet
+  return aPath
 end
 
+
+
+--
 
 function Meadow:_designatePlayerSpawn()
   local dMap, sptSet = self:_dijkstra()
@@ -204,12 +220,6 @@ function Meadow:_designateStairsSpawn()
     end
   end
 
-  local less = math.random(stairs.v - 3, stairs.v)
-  for i, v in ipairs(sptSet) do
-    if v.v == less then
-      stairs = v
-    end
-  end
 
   self:_markSpace(stairs.x, stairs.y, "stairs")
 end
