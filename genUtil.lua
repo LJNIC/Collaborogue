@@ -117,7 +117,6 @@ function Gen:_markSpace(x, y, thingStr)
   markers[thingStr] = markers[thingStr] or {}
 
   self._markedMap[x][y] = thingStr
-  self._markers[thingStr] = {x=x, y=y}
   table.insert(markers[thingStr], {x=x, y=y})
 end
 
@@ -184,7 +183,7 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
 end
 
 
-function Gen:_dijkstra(x, y, path)
+function Gen:_dijkstra(x, y, path, weights)
   local vonNeuman = {
     n = {0, -1},
     e = {1, 0},
@@ -202,7 +201,6 @@ function Gen:_dijkstra(x, y, path)
   end
 
   if path == nil then
-    
     local centerX, centerY = self._width-20, self._height-20
     local startX, startY = x or centerX, y or centerY
 
@@ -217,9 +215,21 @@ function Gen:_dijkstra(x, y, path)
     end
 
   else
-    for i, v in ipairs(path) do
-      dMap[v.x][v.y] = 0
+
+    if weights == "path" then
+      for i, v in ipairs(path) do
+        dMap[v.x][v.y] = 0
+      end
+    elseif weights == "entrance" then
+      for i, v in ipairs(path) do
+        dMap[v.x][v.y] = #path - i
+      end
+    elseif weights == "exit" then
+      for i, v in ipairs(path) do
+        dMap[v.x][v.y] = i
+      end
     end
+
   end
 
   local function hell()

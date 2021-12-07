@@ -12,79 +12,25 @@ local function Meadow(level)
     level:addActor(actor)
   end
 
-  local function populateStairRoom(room)
-    local function spawnStairs()
-      local x = room.x1 + (room.width/2)
-      local y = room.y1 + (room.height/2)
-      spawnActor(actors.Stairs(), x, y)
-    end
 
-    local function spawnDoors()
-      local centerX = room.x1 + (room.width/2)
-      local centerY = room.y1 + (room.height/2)
-
-      spawnActor(actors.Door(), room.x1, centerY)
-      spawnActor(actors.Door(), centerX, room.y1)
-      spawnActor(actors.Door(), room.x1 + room.width, centerY)
-      spawnActor(actors.Door(), centerX, room.y1 + room.height)
-    end
-
-    spawnStairs()
-    spawnDoors()
-  end
-
-  local function populateSpiderZone()
-    local room = rooms["nest"]
-    local width, height = room.width, room.height
-    local x1, y1 = room.x1, room.y1
-    local x2, y2 = room.x1 + room.width, room.y1 + room.height
-
-    for x = x1, x2 do
-      for y = y1, y2 do
-        if love.math.random() >= .6 then
-          spawnActor(actors.Web(), x, y)
-        end
-      end
-    end
-
-    spawnActor(actors.Webweaver(), 10, 10)
-  end
-
-  local function shroomPath()
-    for i, v in ipairs(map._aPath) do
-      if i ~= 1 then
-        spawnActor(actors.Glowshroom(), v.x, v.y)
-      end
-    end
-  end
-
-  local function heatMap()
-    for x, v in ipairs(map._heatMap) do
-      for y, w in ipairs(v) do
-        if w == 0 then
-          spawnActor(actors.Glowshroom(), x, y)
-        end
-
-        if w > 10 and w < 999 then
-          spawnActor(actors.Web(), x, y)
-        end
+  for k, v in pairs(map._markers) do
+    for _, w in ipairs(v) do
+      if k ~= "Player" then
+        spawnActor(actors[k](), w.x, w.y)
       end
     end
   end
 
   for k, v in pairs(map._markers) do
-    if k == "player" then
-      spawnActor(game.Player, v.x, v.y)
-    end
-    if k == "stairs" then
-      spawnActor(actors.Stairs(), v.x, v.y)
+    for _, w in ipairs(v) do
+      if k == "Player" then
+        spawnActor(game.Player, w.x, w.y)
+        break
+      end
     end
   end
 
 
-  --shroomPath()
-  heatMap()
-  --populateSpiderZone()
   return map
 end
 

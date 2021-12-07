@@ -18,17 +18,8 @@ function Meadow:_create()
   self:_shapeEdges()
   self:_blobs()
 
-  self:_designateStairsSpawn()
 
-  --self._aPath = self:_aStar(self._markers["player"].x,self._markers["player"].y,
-   --                         self._markers["stairs"].x,self._markers["stairs"].y
-  --)
-
-  self._heatMap = self:_generateHeatMap(self._markers["player"].x,self._markers["player"].y,
-                                      self._markers["stairs"].x,self._markers["stairs"].y
-  )
-
-  self:_designateZoning(15, 15, 3, 3, "nest")
+  self:_designateActorSpawns()
   return self
 end
 
@@ -77,81 +68,114 @@ function Meadow:_blobs()
 end
 
 
-function Meadow:_generateHeatMap(x1,y1, x2,y2)
-
+function Meadow:_generateHeatMaps(x1,y1, x2,y2)
   local aPath = self:_aStar(x1,y1, x2,y2)
 
-  local heatMap = self:_dijkstra(_,_, aPath)
+  local pathMap = self:_dijkstra(_,_, aPath, "path")
+  local entranceMap = self:_dijkstra(_,_, aPath, "entrance")
+  local exitMap = self:_dijkstra(_,_, aPath, "exit")
 
-  return heatMap
+  return pathMap, entranceMap, exitMap
 end
 
---
 
-function Meadow:_designatePlayerSpawn()
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Meadow:_designateActorSpawns()
   local dMap, sptSet = self:_dijkstra()
 
-  local newStart = nil
+  local dMapOrigin = nil
   for i, v in ipairs(sptSet) do
-    if newStart == nil or v.v > newStart.v and v.v ~= 999 then
-      newStart = v
+    if dMapOrigin == nil or v.v > dMapOrigin.v and v.v ~= 999 then
+      dMapOrigin = v
     end
   end
 
-  local less = math.random(newStart.v - 3, newStart.v)
+  local dMap, sptSet = self:_dijkstra(dMapOrigin.x, dMapOrigin.y)
+
+  local dMapFarPos = nil
   for i, v in ipairs(sptSet) do
-    if v.v == less then
-      newStart = v
+    if dMapFarPos == nil or v.v > dMapFarPos.v and v.v ~= 999 then
+      dMapFarPos = v
     end
   end
 
-  local dMap, sptSet = self:_dijkstra(newStart.x, newStart.y)
-
-  self:_markSpace(newStart.x, newStart.y, "player")
-
-  return dMap, sptSet
-end
-
-function Meadow:_designateStairsSpawn()
-  local dMap, sptSet = self:_designatePlayerSpawn()
-
-  local stairs = nil
-  for i, v in ipairs(sptSet) do
-    if stairs == nil or v.v > stairs.v and v.v ~= 999 then
-      stairs = v
-    end
-  end
+  self:_markSpace(dMapOrigin.x, dMapOrigin.y, "Player")
+  self:_markSpace(dMapFarPos.x, dMapFarPos.y, "Stairs")
 
 
-  self:_markSpace(stairs.x, stairs.y, "stairs")
-end
-  --
 
-function Meadow:_spawnRoom(x1, y1, width, height)
 
-  self:_clearArea(x1,y1, x1+width,y1+height)
-  self:_fillPerimeter(x1,y1, x1+width,y1+height)
 
-  --Cross Pattern
-  for x = x1, x1 + width do
-    for y = y1, y1 + height do
-      if x == x1 + (width/2) or y == y1 + (height/2) then
-        self._map[x][y] = 0
+  local pathMap, entranceMap, exitMap =
+    self:_generateHeatMaps(dMapOrigin.x,dMapOrigin.y, dMapFarPos.x,dMapFarPos.y)
+
+
+  for x = 1, self._width do
+    for y = 1, self._width do
+      if pathMap[x][y] ~= 999 then
+        if pathMap.max == nil or pathMap[x][y] > pathMap.max then
+          pathMap.max = pathMap[x][y]
+        end
       end
     end
   end
-end
 
-function Meadow:_randomRoom()
+  for x = 1, self._width do
+    for y = 1, self._height do
+      local path = pathMap[x][y]
+      local entrance =  entranceMap[x][y]
+      local exit = exitMap[x][y]
 
-  local x = love.math.random(2, self._width - 8)
-  local y = love.math.random(2, self._height - 8)
-  local height = 4
-  local width = 4
+      local edge = pathMap.max
 
-  self:_designateZoning(x,y, width,height)
+      local function notWall(v)
+        if not (v >= 999) then
+          return true
+        end
+      end
 
-  self:_spawnRoom(x, y, width, height)
+      if path >= 0 and path <= 1 then
+        self:_markSpace(x, y, "Glowshroom")
+      end
+
+      if path > 1 and path <= edge/3 and notWall(path) then
+          self:_markSpace(x, y, "Shard")
+      end
+
+      if path > edge/3 and path <= 2*edge/3 and notWall(path) then
+        self:_markSpace(x, y, "Web")
+      end
+
+      if path > 2*edge/3 and path <= edge and notWall(path) then
+        self:_markSpace(x, y, "Arrow")
+      end
+
+
+
+      --if path <= 5 and notWall(path) then
+        --if love.math.random() <= .02 then
+          --self:_markSpace(x, y, "Glowshroom")
+        --end
+      --end
+
+
+
+      
+    end
+  end
+
 end
 
 return Meadow
