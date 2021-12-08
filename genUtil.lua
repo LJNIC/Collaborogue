@@ -163,7 +163,7 @@ end
 
 function Gen:_spacePropogation(value, neighborhood, cell, size)
   local neighborhood = self:_getNeighborhood(neighborhood)
-
+ 
   self._map[cell.x][cell.y] = value
 
   local function recurse(cell, size)
@@ -182,8 +182,9 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
   recurse(cell, size)
 end
 
-function Gen:_dijkstra(set)
-  local neighbors = self:_getNeighborhood("vonNeuman")
+function Gen:_dijkstra(set, neighborhood)
+  local neighborhood = neighborhood or "vonNeuman"
+  local neighbors = self:_getNeighborhood(neighborhood)
   local map = self:_fillMap(999)
   local traveled = {}
 

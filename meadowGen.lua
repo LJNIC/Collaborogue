@@ -79,7 +79,102 @@ function Meadow:_generateHeatMaps(x1,y1, x2,y2)
 end
 
 
+function Meadow:_spiderZone(x,y)
+  local size = self:_rollGrowthPotential({x, y}, .9, 7, 4)
+  local spiderChance = .10
+  local spiderLimit = size / 2
 
+  local cells = self:_dijkstra({{x=x, y=y}})
+
+  for x, v in ipairs(cells) do
+    for y, w in ipairs(v) do
+      if w <= size then
+        if love.math.random() <= .5 then
+          self:_markSpace(x, y, "Web")
+        end
+
+        if spiderLimit > 0 then
+          if love.math.random() <= spiderChance then
+            spiderChance = spiderChance - .50
+            spiderLimit = spiderLimit - 1
+            self:_markSpace(x, y, "Webweaver")
+          end
+        else
+          spiderChance = spiderChance + .10
+        end
+      end
+    end
+  end
+end
+
+function Meadow:_sqeetoZone(x, y)
+  local sqeetoLimit = 6
+  local size = self:_rollGrowthPotential({x, y}, .9, 7, 4)
+
+  local cells = self:_dijkstra({{x=x, y=y}})
+
+  for x, v in ipairs(cells) do
+    for y, w in ipairs(v) do
+      if w <= size then
+        if love.math.random() <= .2 then
+          if sqeetoLimit ~= 0 then
+            sqeetoLimit = sqeetoLimit - 1
+            self:_markSpace(x, y, "Sqeeto")
+          end
+        end
+      end
+    end
+  end
+end
+
+function Meadow:_crystalZone(x,y)
+  local size = self:_rollGrowthPotential({x, y}, .3, 5, 2)
+
+  local cells = self:_dijkstra({{x=x, y=y}})
+
+  for x, v in ipairs(cells) do
+    for y, w in ipairs(v) do
+      if w <= size then
+        self:_markSpace(x, y, "Shard")
+      end
+    end
+  end
+end
+
+function Meadow:_farmZone(x,y)
+  local size = self:_rollGrowthPotential({x, y}, .3, 5, 2)
+
+  local cells = self:_dijkstra({{x=x, y=y}}, "moore")
+
+  self:_markSpace(x, y, "Shopkeep")
+
+  for x, v in ipairs(cells) do
+    for y, w in ipairs(v) do
+      if w <= size then
+        self:_markSpace(x, y, "Snip")
+      end
+    end
+  end
+
+end
+
+function Meadow:_pondZone(x,y)
+  local size = self:_rollGrowthPotential({x, y}, .3, 5, 2)
+
+  local cells = self:_dijkstra({{x=x, y=y}})
+
+  for x, v in ipairs(cells) do
+    for y, w in ipairs(v) do
+      if w <= size then
+        self:_markSpace(x, y, "Box")
+      end
+    end
+  end
+end
+
+function Meadow:_treasureZone(x,y)
+  self:_markSpace(x, y, "Chest")
+end
 
 
 
@@ -156,11 +251,28 @@ function Meadow:_designateActorSpawns()
     end
   end
 
+--[[
+  local bignum = -1
+
   for x = 1, self._width do
     for y = 1, self._height do
-      local path = pathMap[x][y]
+      if pathMap[x][y] + dMap[x][y] < 998 then
+        bignum = math.max(pathMap[x][y] + dMap[x][y], bignum)
+      end
+    end
+  end
 
-      local edge = pathMap.max
+  local zones = {}
+  local farms = 0
+  local crystals = 0
+  local sqeetos = 0
+  for x = 1, self._width do
+    for y = 1, self._height do
+      local path = pathMap[x][y] + dMap[x][y]
+      local edge = bignum
+
+      local path2 = pathMap[x][y]
+      local edge2 = pathMap.max
 
       local function notWall(v)
         if not (v >= 999) then
@@ -168,34 +280,91 @@ function Meadow:_designateActorSpawns()
         end
       end
 
-      if path >= 0 and path <= 1 then
-        self:_markSpace(x, y, "Glowshroom")
+      if path2 <= 5 then
+        if love.math.random() <= .02 then
+          self:_markSpace(x, y, "Glowshroom")
+        end
       end
 
-      if path > 1 and path <= edge/3 and notWall(path) then
-          self:_markSpace(x, y, "Shard")
+      if path2 <= 3 then
+        if path >= 5 and path <= 1*edge/3 then
+          zones.ponds = zones.ponds or 0
+          if zones.ponds == 0 then
+            self:_pondZone(x,y)
+            zones.ponds = zones.ponds + 1
+          end
+        end
       end
 
-      if path > edge/3 and path <= 2*edge/3 and notWall(path) then
-        self:_markSpace(x, y, "Web")
+      if path >= 3 and path <= edge/3 then
+        if farms == 0 then
+          self:_farmZone(x,y)
+          farms = farms + 1
+        end
       end
 
-      if path > 2*edge/3 and path <= edge and notWall(path) then
-        self:_markSpace(x, y, "Arrow")
+      if path >= edge/3 and path <= 2*edge/3 then
+        if crystals == 0 then
+          self:_crystalZone(x,y)
+          crystals = crystals + 1
+        end
       end
 
+      if path2 >= edge2/3 and path2 <= 2*edge2/3 then
+        if path >= 2*edge/3 and path <= 3*edge/3 then
+          if sqeetos == 0 then
+            self:_sqeetoZone(x,y)
+            sqeetos = sqeetos + 1
+          end
+        end
+      end
 
+      if path2 >= 2*edge2/3 and path2 <= edge2 then
+        zones.spiders = zones.spiders or 0
+        if zones.spiders == 0 then
+          self:_spiderZone(x,y)
+          zones.spiders = zones.spiders + 1
+        end
+      end
 
-      --if path <= 5 and notWall(path) then
-        --if love.math.random() <= .02 then
-          --self:_markSpace(x, y, "Glowshroom")
-        --end
-      --end
+      if path2 >= 2*edge2/3 and path2 <= edge2 then
+        zones.treasure = zones.treasure or 0
+        if zones.treasure < 2 then
+          self:_treasureZone(x,y)
+          zones.treasure = zones.treasure + 1
+        end
+      end
 
-
-
-      
     end
+  end
+]]--
+local testCells = {}
+  for x = 1, self._width do
+    for y = 1, self._height do
+      local path = pathMap[x][y]
+      local edge = pathMap.max
+
+      if path >= 1 and path <= edge then
+        table.insert(testCells, {x=x,y=y, v=path})
+      end
+
+    end
+  end
+
+  local uniques = {}
+  for i, v in ipairs(testCells) do
+    for j, w in ipairs(testCells) do
+      local d = math.abs(v.x - w.x)+math.abs(v.y - w.y)
+
+      if d <= 8 then
+        testCells[j] = v
+        uniques[tostring(v.x)..","..tostring(v.y)] = {x=v.x,y=v.y, v=v.v}
+      end
+    end
+  end
+
+  for k, v in pairs(uniques) do
+    self:_markSpace(v.x,v.y, "Web")
   end
 
 end
