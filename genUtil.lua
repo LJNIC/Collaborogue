@@ -182,122 +182,75 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
   recurse(cell, size)
 end
 
+function Gen:_dijkstra(set)
+  local neighbors = self:_getNeighborhood("vonNeuman")
+  local map = self:_fillMap(999)
+  local traveled = {}
 
-function Gen:_dijkstra(x, y, path, weights)
-  local vonNeuman = {
-    n = {0, -1},
-    e = {1, 0},
-    s = {0, 1},
-    w = {-1, 0},
-  }
-
-  local sptSet = {}
-  local dMap = {}
-  for x = 1, self._width do
-    dMap[x] = {}
-    for y = 1, self._height do
-      dMap[x][y] = 999
-    end
+  for i, v in ipairs(set) do
+    map[v.x][v.y] = 0
   end
 
-  if path == nil then
-    local centerX, centerY = self._width-20, self._height-20
-    local startX, startY = x or centerX, y or centerY
-
-    if self._map[startX][startY] == 0 then
-      dMap[startX][startY] = 0
-    else
-      repeat
-        startX = math.max(math.min(startX + love.math.random(-5, 5), self._width), 1)
-        startY = math.max(math.min(startY + love.math.random(-5, 5), self._width), 1)
-      until self._map[startX][startY] == 0
-      dMap[startX][startY] = 0
-    end
-
-  else
-
-    if weights == "path" then
-      for i, v in ipairs(path) do
-        dMap[v.x][v.y] = 0
-      end
-    elseif weights == "entrance" then
-      for i, v in ipairs(path) do
-        dMap[v.x][v.y] = #path - i
-      end
-    elseif weights == "exit" then
-      for i, v in ipairs(path) do
-        dMap[v.x][v.y] = i
-      end
-    end
-
+  local function isWall(x, y)
+    return self._map[x][y] == 1
   end
 
-  local function hell()
-    local function updateMDV(mdv, x, y)
-      mdv.v = dMap[x][y]
-      mdv.x = x
-      mdv.y = y
-
-      return mdv
-    end
-
-    while true do
-      local mdv = {}
-
-      for x = 1, self._width do
-        for y = 1, self._height do
-
-          if self._map[x][y] ~= 1 then
-            local skip = false
-
-            if #sptSet ~= 0 then
-              for i, v in ipairs(sptSet) do
-                if v.x == x and v.y == y then
-                  skip = true
-                end
-              end
-            end
-
-            if skip == false then
-              if
-                mdv.v == nil or mdv.v > dMap[x][y]
-              then
-                mdv = updateMDV(mdv, x, y)
-              end
-            end
-
-          end
-        end
-      end
-
-      if mdv.x == nil then
+  local function isTraveled(x, y)
+    local bit = false
+    for _, v in ipairs(traveled) do
+      if v.x == x and v.y == y then
+        bit = true
         break
       end
+    end
 
-      table.insert(sptSet, mdv)
-      for i, v in pairs(vonNeuman) do
-        if self:_posIsInMap(mdv.x + v[1], mdv.y + v[2]) then
-          if self._map[mdv.x+v[1]][mdv.y+v[2]] ~= 1 then
-            dMap[mdv.x + v[1]][mdv.y + v[2]] = math.min(mdv.v + 1, dMap[mdv.x+v[1]][mdv.y+v[2]])
+    return bit
+  end
+
+  local function getLeast(mdp, x, y)
+    if mdp.v > map[x][y] then
+      return {v = map[x][y], x=x,y=y}
+    else
+      return mdp
+    end
+  end
+
+  while true do
+    local minimumDistancePos = {v = 999}
+    local mdp = minimumDistancePos
+
+
+    for x = 1, self._width do
+      for y = 1, self._height do
+        if not isWall(x, y) then
+          if not isTraveled(x, y) then
+            mdp = getLeast(mdp, x, y)
           end
         end
       end
-
     end
-  end
 
-  hell()
+    if mdp.x == nil then
+      break
+    end
 
-  for x, v in ipairs(dMap) do
-    for y, w in ipairs(v) do
-      if w == 999 then
-        self._map[x][y] = 1
+
+    table.insert(traveled, mdp)
+
+    for _, v in pairs(neighbors) do
+      local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
+      if self:_posIsInMap(newPos.x, newPos.y) then
+        if not isWall(newPos.x, newPos.y) then
+          map[newPos.x][newPos.y] = math.min(mdp.v + 1, map[newPos.x][newPos.y])
+        end
       end
     end
+
   end
 
-  return dMap, sptSet
+  return map, traveled
 end
+
 
 function Gen:_aStar(x1,y1, x2,y2)
 

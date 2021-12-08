@@ -24,6 +24,8 @@ function Meadow:_create()
 end
 
 
+
+
 function Meadow:_shapeEdges()
   local cells = {}
   cells.cultureThreshold = .4
@@ -71,11 +73,9 @@ end
 function Meadow:_generateHeatMaps(x1,y1, x2,y2)
   local aPath = self:_aStar(x1,y1, x2,y2)
 
-  local pathMap = self:_dijkstra(_,_, aPath, "path")
-  local entranceMap = self:_dijkstra(_,_, aPath, "entrance")
-  local exitMap = self:_dijkstra(_,_, aPath, "exit")
+  local pathMap = self:_dijkstra(aPath)
 
-  return pathMap, entranceMap, exitMap
+  return pathMap
 end
 
 
@@ -93,7 +93,32 @@ end
 
 
 function Meadow:_designateActorSpawns()
-  local dMap, sptSet = self:_dijkstra()
+  local function getFloorNearArea(x, y)
+    local x,y = x,y
+
+    if self._map[x][y] == 0 then
+      return {x=x, y=y}
+    else
+      repeat
+        x = math.max(math.min(x + love.math.random(-5, 5), self._width), 1)
+        y = math.max(math.min(y + love.math.random(-5, 5), self._height), 1)
+      until self._map[x][y] == 0
+      return {x=x, y=y}
+    end
+  end
+
+
+  local dMap, sptSet = self:_dijkstra({getFloorNearArea(20,20)})
+
+  for x = 1, self._width do
+    for y = 1, self._height do
+      if dMap[x][y] == 999 then
+        self._map[x][y] = 1
+      end
+    end
+  end
+
+
 
   local dMapOrigin = nil
   for i, v in ipairs(sptSet) do
@@ -102,7 +127,7 @@ function Meadow:_designateActorSpawns()
     end
   end
 
-  local dMap, sptSet = self:_dijkstra(dMapOrigin.x, dMapOrigin.y)
+  local dMap, sptSet = self:_dijkstra({dMapOrigin})
 
   local dMapFarPos = nil
   for i, v in ipairs(sptSet) do
@@ -118,8 +143,7 @@ function Meadow:_designateActorSpawns()
 
 
 
-  local pathMap, entranceMap, exitMap =
-    self:_generateHeatMaps(dMapOrigin.x,dMapOrigin.y, dMapFarPos.x,dMapFarPos.y)
+  local pathMap = self:_generateHeatMaps(dMapOrigin.x,dMapOrigin.y, dMapFarPos.x,dMapFarPos.y)
 
 
   for x = 1, self._width do
@@ -135,8 +159,6 @@ function Meadow:_designateActorSpawns()
   for x = 1, self._width do
     for y = 1, self._height do
       local path = pathMap[x][y]
-      local entrance =  entranceMap[x][y]
-      local exit = exitMap[x][y]
 
       local edge = pathMap.max
 
