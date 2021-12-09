@@ -251,6 +251,89 @@ function Meadow:_designateActorSpawns()
     end
   end
 
+
+  local testCells = {}
+  for x = 1, self._width do
+    for y = 1, self._height do
+      local path = pathMap[x][y]
+      local edge = pathMap.max
+
+      if path >= 1 and path <= edge then
+        table.insert(testCells, {x=x,y=y, v=path})
+      end
+
+    end
+  end
+
+  local uniques = {}
+  for i, v in ipairs(testCells) do
+    for j, w in ipairs(testCells) do
+      local d = math.abs(v.x - w.x)+math.abs(v.y - w.y)
+
+      if d <= 8 then
+        testCells[j] = v
+        uniques[tostring(v.x)..","..tostring(v.y)] = {x=v.x,y=v.y}
+      end
+    end
+  end
+
+  local sortie = {}
+  for k, v in pairs(uniques) do
+    local a = pathMap[v.x][v.y]
+    local d = dMap[v.x][v.y]
+
+    table.insert(sortie, {a=a,d=d,x=v.x,y=v.y})
+  end
+
+
+  ----
+  --FarFar
+  do
+  local eSpace = {}
+  for i,v in ipairs(sortie) do
+    local rank = v.a + v.d
+    if eSpace.v == nil or eSpace.v < rank then
+      eSpace.v = rank
+      eSpace.x = v.x
+      eSpace.y = v.y
+    end
+  end
+
+    local seed = {x = eSpace.x, y = eSpace.y}
+    local map = self:_dijkstra({seed})
+    for x = 1, self._height do
+      for y = 1, self._width do
+        if map[x][y] <= 4 then
+         -- self:_markSpace(x,y, "Web")
+        end
+      end
+    end
+  end
+
+
+  do
+    local paths = {}
+    for i, v in ipairs(sortie) do
+      local rank = v.a
+      if rank <= 6 then
+        table.insert(paths, v)
+      end
+    end
+
+    local map = self:_dijkstra(paths)
+    for x = 1, self._height do
+      for y = 1, self._width do
+        if map[x][y] <= 1 then
+          self:_markSpace(x,y, "Web")
+        end
+      end
+    end
+  end
+
+  for k, v in pairs(uniques) do
+    self:_markSpace(v.x,v.y, "Box")
+  end
+
 --[[
   local bignum = -1
 
@@ -338,35 +421,7 @@ function Meadow:_designateActorSpawns()
     end
   end
 ]]--
-local testCells = {}
-  for x = 1, self._width do
-    for y = 1, self._height do
-      local path = pathMap[x][y]
-      local edge = pathMap.max
-
-      if path >= 1 and path <= edge then
-        table.insert(testCells, {x=x,y=y, v=path})
-      end
-
-    end
-  end
-
-  local uniques = {}
-  for i, v in ipairs(testCells) do
-    for j, w in ipairs(testCells) do
-      local d = math.abs(v.x - w.x)+math.abs(v.y - w.y)
-
-      if d <= 8 then
-        testCells[j] = v
-        uniques[tostring(v.x)..","..tostring(v.y)] = {x=v.x,y=v.y, v=v.v}
-      end
-    end
-  end
-
-  for k, v in pairs(uniques) do
-    self:_markSpace(v.x,v.y, "Web")
-  end
-
+  
 end
 
 return Meadow
