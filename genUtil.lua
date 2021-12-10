@@ -380,30 +380,56 @@ function Gen:_aStar(x1,y1, x2,y2)
   return aPath
 end
 
-function Gen:_automata()
-  local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+function Gen:_automata(map)
+  local neighbors = {
+    {-1,1},{0,1},{1,1},
+    {-1,0},      {1,0},
+    {-1,-1},{0,-1},{1,-1}
+  }
 
-  for x = 2, self._width-1 do
-    for y = 2, self._height-1 do
-      local numOfNeighbors = 0
-      for i, v in ipairs(neighbors) do
-        if self._map[x+v[1]][y+v[2]] == 1 then
-          numOfNeighbors = numOfNeighbors + 1
-        end
-        if numOfNeighbors == 0 then
-          self._map[x][y] = 1
-        elseif numOfNeighbors == 1 then
-          self._map[x][y] = 1
-        elseif numOfNeighbors == 2 then
-          self._map[x][y] = 1
-        elseif numOfNeighbors == 3 then
-          self._map[x][y] = 1
-        elseif numOfNeighbors == 4 then
-          self._map[x][y] = 0
-        end
-      end
+  local copy = {}
+  for x = 1, #map do
+    copy[x] = {}
+    for y = 1, #map[x] do
+      copy[x][y] = 0
     end
   end
+
+  for x = 1, #map do
+    for y = 1, #map[x] do
+      local numOfNeighbors = 0
+      for i, v in ipairs(neighbors) do
+        if self:_posIsInArea(x+v[1], y+v[2], 1,1,#map,#map[x]) then
+          if map[x+v[1]][y+v[2]] == 1 then
+            numOfNeighbors = numOfNeighbors + 1
+          end
+        else
+          numOfNeighbors = numOfNeighbors + 1
+        end
+      end
+
+      if map[x][y] == 0 then
+        if numOfNeighbors > 4 then
+          copy[x][y] = 1
+        end
+      elseif map[x][y] == 1 then
+        if numOfNeighbors >= 3 then
+          copy[x][y] = 1
+        else
+          copy[x][y] = 0
+        end
+      end
+
+    end
+  end
+
+  
+  for x = 1, #copy do
+    for y = 1, #copy[x] do
+      map[x][y] = copy[x][y]
+    end
+  end
+
 end
 
 function Gen:_automata2()

@@ -17,10 +17,38 @@ function New:_create()
   self._markedMap = self:_newMarkedMap()
   self._markers = {}
 
-  self:_generateRooms()
+  self:_imposeMap()
+  
   return self
 end
 
+
+function New:_miniMaps()
+
+  local map = {}
+  for x = 1, 10 do
+    map[x] = {}
+    for y = 1, 10 do
+      map[x][y] = math.random(0,1)
+    end
+  end
+
+  for i = 1, 1 do
+  
+    self:_automata(map)
+  end
+
+  return map
+end
+
+function New:_imposeMap()
+  local map = self:_miniMaps()
+  for x = 1, #map do
+    for y = 1, #map[x] do
+      self._map[x][y] = map[x][y]
+    end
+  end
+end
 
 function New:_isOverlap(x1, y1, x2, y2)
   local bit = false

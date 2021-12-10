@@ -28,6 +28,7 @@ local function New(level)
     end
   end
 
+  spawnActor(game.Player, 5, 5)
   return map
 end
 
