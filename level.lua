@@ -6,13 +6,14 @@ levels.Meadow = require "meadowLevel"
 levels.City = require "cityLevel"
 levels.Cave = require "caveLevel"
 levels.Nest = require "nestLevel"
+levels.New = require "newLevel"
 
 local Level = Object:extend()
 
 
 function Level:__new(mapType)
   local mapType = levels[mapType]
-  --local mapType = levels["Cave"]
+  local mapType = levels["New"]
 
 
   self.actors = {}

@@ -1,4 +1,3 @@
-local Object = require "object"
 local Gen = require "genUtil"
 
 local Meadow = Gen:extend()

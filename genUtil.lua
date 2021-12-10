@@ -89,19 +89,33 @@ function Gen:_fillPerimeter(x1,y1, x2,y2)
 end
 
 --Designation
+function Gen:_newZoneMap()
+  local map = self:_fillMap(nil)
+  return map
+end
+
 function Gen:_designateZoning(x, y, width, height, identifier)
   local width, height = width, height
+  local centerX = x + math.floor(width/2)
+  local centerY = y + math.floor(height/2)
   local x1, y1 = x, y
   local x2, y2 = x1 + width - 1, y1 + height - 1
   local identifier = identifier or (#self._rooms + 1)
 
   self._rooms[identifier] = {
     width = width, height = height,
+    centerX = centerX, centerY = centerY,
     x1 = x1, y1 = y1,
     x2 = x2, y2 = y2,
   }
 
+  for x = x1, x2 do
+    for y = y1, y2 do
+      self._zoneMap[x][y] = identifier
+    end
+  end
 end
+
 function Gen:_newMarkedMap()
   local map = {}
   for x = 1, self._width do
