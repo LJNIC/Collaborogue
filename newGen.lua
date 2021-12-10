@@ -21,6 +21,7 @@ function New:_create()
   return self
 end
 
+
 function New:_isOverlap(x1, y1, x2, y2)
   local bit = false
 
@@ -58,10 +59,12 @@ function New:_generateRooms()
   self:_generateHall("boss", "clearing")
   self:_generateHall("prism", "clearing")
   self:_generateHall("boss", "treasure")
+  
 
   for i = 1, 100 do
     self:_DLA()
   end
+
 end
 
 function New:_defineRoom(wMin,wMax, hMin,hMax, identifier, actor)

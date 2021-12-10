@@ -380,4 +380,85 @@ function Gen:_aStar(x1,y1, x2,y2)
   return aPath
 end
 
+function Gen:_automata()
+  local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+
+  for x = 2, self._width-1 do
+    for y = 2, self._height-1 do
+      local numOfNeighbors = 0
+      for i, v in ipairs(neighbors) do
+        if self._map[x+v[1]][y+v[2]] == 1 then
+          numOfNeighbors = numOfNeighbors + 1
+        end
+        if numOfNeighbors == 0 then
+          self._map[x][y] = 1
+        elseif numOfNeighbors == 1 then
+          self._map[x][y] = 1
+        elseif numOfNeighbors == 2 then
+          self._map[x][y] = 1
+        elseif numOfNeighbors == 3 then
+          self._map[x][y] = 1
+        elseif numOfNeighbors == 4 then
+          self._map[x][y] = 0
+        end
+      end
+    end
+  end
+end
+
+function Gen:_automata2()
+  local perms = {}
+  local square = {1,1,1, 0,0, 0,0,0}
+
+  table.insert(perms, square)
+  local function mirrorX(t)
+    local new = {}
+    for i = 1,3 do
+      new[i] = t[i+5]
+    end
+    for i = 4,5 do
+      new[i] = t[i]
+    end
+    for i = 6,8 do
+      new[i] = t[i-5]
+    end
+
+    return new
+  end
+
+  table.insert(perms, mirrorX(square))
+
+  local function match(x,y, comp)
+    local map = self._map
+    local neighbors = {
+      {-1,1},{0,1},{1,1},
+      {-1,0},      {1,0},
+      {-1,-1},{0,-1},{1,-1}
+    }
+
+    local bit = true
+
+    for i, v in ipairs(neighbors) do
+      local x,y = x+v[1],y+v[2]
+      if map[x][y] ~= comp[i] then
+        bit = false
+        break
+      end
+    end
+
+    return bit
+  end
+
+  for x = 2, self._width-1 do
+    for y = 2, self._height-1 do
+      for i, v in ipairs(perms) do
+        if match(x,y, v) then
+          self._map[x][y] = 1
+        end
+      end
+    end
+  end
+end
+
+
 return Gen
