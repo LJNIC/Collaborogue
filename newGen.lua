@@ -17,37 +17,153 @@ function New:_create()
   self._markedMap = self:_newMarkedMap()
   self._markers = {}
 
-  self:_imposeMap()
+  self:_woooork()
   
   return self
 end
 
+function New:_woooork()
 
-function New:_miniMaps()
+  local function nest()
+    local map = self:_miniMaps(10,10)
+    for i = 1, 1 do
+      self:_drunkWalk(5,5, map,
+                      function(x, y)
+                        if not self:_posIsInArea(x,y, 1,1, 10,10) then
+                          return true
+                        end
+                      end
+      )
+    end
+    for i = 1, 10 do
+      self:_DLA(map)
+    end
 
+    return map
+  end
+
+  local function nest()
+    local map = self:_miniMaps(30,30)
+    for i = 1, 2 do
+      self:_drunkWalk(15,15, map,
+                      function(x, y)
+                        if not self:_posIsInArea(x,y, 5,5, 15,15) then
+                          return true
+                        end
+                      end
+      )
+    end
+    for i = 1, 200 do
+      self:_DLA(map)
+    end
+    return map
+  end
+
+
+  local function clearing()
+    local map = self:_miniMaps(20,20)
+
+    for x = 8, 12 do
+      for y = 8, 12 do
+        local cx, cy = 10, 10
+        local rad = 2
+        local dx = (x - cx)^2
+        local dy = (y - cy)^2
+        if (dx + dy) <= rad^2 then
+          map[x][y] = 0
+        end
+      end
+    end
+
+    for i = 1, 100 do
+      self:_DLA(map)
+    end
+
+    for i = 1, 5 do
+      self:_automata(map)
+    end
+
+    return map
+  end
+
+
+  local function entrance()
+    local map = self:_miniMaps(6,6)
+    for i = 1, 1 do
+      self:_drunkWalk(3,3, map,
+                      function(x, y)
+                        if not self:_posIsInArea(x,y, 1,1, 6,6) then
+                          return true
+                        end
+                      end
+      )
+    end
+    return map
+  end
+
+  local function exit()
+    local map = self:_miniMaps(6,6)
+    for i = 1, 1 do
+      self:_drunkWalk(3,3, map,
+                      function(x, y)
+                        if not self:_posIsInArea(x,y, 1,1, 6,6) then
+                          return true
+                        end
+                      end
+      )
+    end
+
+    return map
+  end
+
+
+  local map = self:_combineMaps(nest(), clearing())
+  self:_imposeMap(map)
+end
+
+function New:_miniMaps(width, height)
   local map = {}
-  for x = 1, 10 do
+  map.width = width
+  map.height = height
+  for x = 1, map.width do
     map[x] = {}
-    for y = 1, 10 do
-      map[x][y] = math.random(0,1)
+    for y = 1, map.height do
+      map[x][y] = 1
     end
   end
-
-  for i = 1, 1 do
-  
-    self:_automata(map)
-  end
-
   return map
 end
 
-function New:_imposeMap()
-  local map = self:_miniMaps()
+function New:_imposeMap(map, tx, ty)
+  local tx,ty = tx or 0, ty or 0
   for x = 1, #map do
     for y = 1, #map[x] do
-      self._map[x][y] = map[x][y]
+      self._map[x+tx][y+ty] = map[x][y]
     end
   end
+end
+
+function New:_combineMaps(map1, map2)
+  local map = {}
+  map.width = map1.width + map2.width
+  map.height = map1.height + map2.height
+
+  for x = 1, map1.width do
+    map[x] = {}
+    for y = 1, map1.height do
+      map[x][y] = map1[x][y]
+    end
+  end
+
+  for x = 1, map2.width do
+    map[x+map1.width] = {}
+    for y = 1, map2.height do
+      map[x+map1.width][y+map1.height] = map2[x][y]
+    end
+  end
+
+
+  return map
 end
 
 function New:_isOverlap(x1, y1, x2, y2)
@@ -81,13 +197,11 @@ function New:_generateRooms()
   self:_defineRoom(1,1, 3,3, "boss", "Webweaver")
   self:_defineRoom(1,1, 3,3, "treasure", "Shard")
 
-  
   self:_generateHall("entrance", "clearing")
   self:_generateHall("exit", "clearing")
   self:_generateHall("boss", "clearing")
   self:_generateHall("prism", "clearing")
   self:_generateHall("boss", "treasure")
-  
 
   for i = 1, 100 do
     self:_DLA()
@@ -108,12 +222,12 @@ function New:_defineRoom(wMin,wMax, hMin,hMax, identifier, actor)
   self:_clearArea(x,y, x+width-1,y+height-1)
 end
 
-function New:_DLA()
+function New:_DLA(map)
   local x1,y1 = nil,nil
   repeat
-    x1 = math.random(2, 39)
-    y1 = math.random(2, 39)
-  until self._map[x1][y1] == 1
+    x1 = math.random(2, map.width - 1)
+    y1 = math.random(2, map.height - 1)
+  until map[x1][y1] == 1
 
   local function clamp(n, min, max)
     local n = math.max(math.min(n, max), min)
@@ -125,14 +239,14 @@ function New:_DLA()
     x2,y2 = x1,y1
 
     local vec = math.random(1, 4)
-    x1 = clamp(x1 + neighbors[vec][1], 2, 39)
-    y1 = clamp(y1 + neighbors[vec][2], 2, 39)
-  until self._map[x1][y1] == 0
+    x1 = clamp(x1 + neighbors[vec][1], 2, map.width-1)
+    y1 = clamp(y1 + neighbors[vec][2], 2, map.height-1)
+  until map[x1][y1] == 0
 
-  self:_clearSpace(x2, y2)
+  map[x2][y2] = 0
 end
 
-function New:_drunkWalk(x, y, map, limit)
+function New:_drunkWalk(x, y, map, exitFunc)
   local x, y = x, y
   local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
   local function clamp(n, min, max)
@@ -145,8 +259,8 @@ function New:_drunkWalk(x, y, map, limit)
     x = clamp(x + neighbors[vec][1], 2, 39)
     y = clamp(y + neighbors[vec][2], 2, 39)
 
-    self:_clearSpace(x, y)
-  until map[x][y] == limit
+    map[x][y] = 0
+  until exitFunc(x,y) == true
 end
 
 function New:_guidedDrunkWalk(x1, y1, x2, y2, map, limit)

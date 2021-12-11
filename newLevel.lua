@@ -1,7 +1,7 @@
 local NewGen = require "newGen"
 
 local function New(level)
-  local Gen = NewGen(40, 40)
+  local Gen = NewGen(100, 100)
   local map = Gen:_create()
 
   local function spawnActor(actor, x, y)
@@ -28,7 +28,7 @@ local function New(level)
     end
   end
 
-  spawnActor(game.Player, 5, 5)
+  spawnActor(game.Player, 15, 15)
   return map
 end
 
