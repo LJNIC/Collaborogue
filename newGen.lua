@@ -148,17 +148,49 @@ function New:_combineMaps(map1, map2)
   map.width = map1.width + map2.width
   map.height = map1.height + map2.height
 
+  local function isClearAdjcent(map, x, y)
+    local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+    local bit = false
+
+    for i, v in ipairs(neighbors) do
+      local x, y = x+v[1], y+v[2]
+      if self:_posIsInArea(x, y, 1,1, map.width,map.height) then
+        if map[x][y] == 0 then
+          bit = true
+        end
+      end
+    end
+
+    return bit
+  end
+
   for x = 1, map1.width do
     map[x] = {}
     for y = 1, map1.height do
-      map[x][y] = map1[x][y]
+      if map1[x][y] == 1 then
+        if isClearAdjcent(map1, x, y) then
+          map[x][y] = map1[x][y]
+        else
+          map[x][y] = 0
+        end
+      else
+        map[x][y] = 0
+      end
     end
   end
 
   for x = 1, map2.width do
     map[x+map1.width] = {}
     for y = 1, map2.height do
-      map[x+map1.width][y+map1.height] = map2[x][y]
+      if map2[x][y] == 1 then
+        if isClearAdjcent(map2, x, y) then
+          map[x+map1.width][y] = map2[x][y]
+        else
+          map[x+map1.width][y] = 0
+        end
+      else
+        map[x+map1.width][y] = 0
+      end
     end
   end
 
