@@ -117,18 +117,164 @@ function New:_woooork()
   end
 
 
-  local map = self:_combineMaps(nest(), clearing())
+  local function outlineTransformations(map)
+    local map = map
+    local map1 = self:_outline(map, {{x=1,y=1}})
+
+  local function isClearAdjacent(map, x, y)
+    local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+    local bit = false
+
+    for i, v in ipairs(neighbors) do
+      local x, y = x+v[1], y+v[2]
+      if self:_posIsInArea(x, y, 1,1, map.width,map.height) then
+        if map[x][y] == 0 then
+          bit = true
+        end
+      end
+    end
+
+    return bit
+  end
+
+  local map2 = {}
+  for x = 1, #map do
+    map2[x] = {}
+    for y = 1, #map[x] do
+      if map1[x][y] == 999 then
+        map2[x][y] = 0
+      else
+        map2[x][y] = 1
+      end
+    end
+  end
+
+  for x = 1, #map do
+    for y = 1, #map[x] do
+      if map1[x][y] == 999 then
+        map[x][y] = 0
+      end
+    end
+  end
+
+  for x = 1, #map do
+    for y = 1, #map[x] do
+      if map[x][y] == 1 then
+        if isClearAdjacent(map,x,y) then
+          map2[x][y] = 1
+        else
+          map2[x][y] = 0
+        end
+      end
+    end
+  end
+
+  return map2
+  end
+
+  local map = outlineTransformations(nest())
+
   self:_imposeMap(map)
 end
 
-function New:_miniMaps(width, height)
+function New:_outline(map1, set, neighborhood)
+  local neighborhood = neighborhood or "vonNeuman"
+  local neighbors = self:_getNeighborhood(neighborhood)
+  local map = self:_miniMaps(map1.width, map1.height, 999)
+  local traveled = {}
+
+  for i, v in ipairs(set) do
+    map[v.x][v.y] = 0
+  end
+
+  local function isClear(x, y)
+    return map1[x][y] == 0
+  end
+  local function isClearAdjacent(map, x, y)
+    local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+    local bit = false
+
+    for i, v in ipairs(neighbors) do
+      local x, y = x+v[1], y+v[2]
+      if self:_posIsInArea(x, y, 1,1, map.width,map.height) then
+        if map[x][y] == 0 then
+          bit = true
+        end
+      end
+    end
+
+    return bit
+  end
+
+  local function isTraveled(x, y)
+    local bit = false
+    for _, v in ipairs(traveled) do
+      if v.x == x and v.y == y then
+        bit = true
+        break
+      end
+    end
+
+    return bit
+  end
+
+  local function getLeast(mdp, x, y)
+    if mdp.v > map[x][y] then
+      return {v = map[x][y], x=x,y=y}
+    else
+      return mdp
+    end
+  end
+
+  while true do
+    local minimumDistancePos = {v = 999}
+    local mdp = minimumDistancePos
+
+
+    for x = 1, map1.width do
+      for y = 1, map1.height do
+        if not isClear(x, y) then
+          if not isTraveled(x, y) then
+            mdp = getLeast(mdp, x, y)
+          end
+        end
+      end
+    end
+    
+
+    if mdp.x == nil then
+      break
+    end
+
+
+    table.insert(traveled, mdp)
+
+
+    for _, v in pairs(neighbors) do
+      local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
+      if self:_posIsInArea(newPos.x, newPos.y, 1,1, map1.width,map1.height) then
+        if not isClear(newPos.x, newPos.y) then
+          if not isClearAdjacent(map1, mdp.x, mdp.y) then
+            map[newPos.x][newPos.y] = math.min(mdp.v + 1, map[newPos.x][newPos.y])
+          end
+        end
+      end
+    end
+
+  end
+
+  return map, traveled
+end
+
+
+function New:_miniMaps(width, height, value)
   local map = {}
   map.width = width
   map.height = height
   for x = 1, map.width do
     map[x] = {}
     for y = 1, map.height do
-      map[x][y] = 1
+      map[x][y] = value or 1
     end
   end
   return map

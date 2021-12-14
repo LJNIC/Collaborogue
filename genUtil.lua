@@ -15,7 +15,7 @@ end
 
 --Checks
 function Gen:_posIsInArea(x,y, xMin,yMin, xMax,yMax)
-  if x > xMin and x < xMax and y > yMin and y < yMax then
+  if x >= xMin and x <= xMax and y >= yMin and y <= yMax then
     return true
   else
     return false
