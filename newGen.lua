@@ -174,6 +174,80 @@ function New:_woooork()
 
   local map = outlineTransformations(nest())
 
+  local function getLines(map)
+
+  local startPos = {}
+  for x = 1, #map do
+    for y = 1, #map[x] do
+      if map[x][y] == 1 then
+        startPos = {x=x,y=y}
+      end
+    end
+  end
+
+  local lines = {{startPos}}
+  local neighbors = {
+    {-1,1},{0,1},{1,1},
+    {-1,0},      {1,0},
+    {-1,-1},{0,-1},{1,-1}
+  }
+
+  while true do
+    local line = lines[#lines]
+    local start = line[1]
+    for i, v in ipairs(neighbors) do
+      if #lines == 1 or
+        not (v[1] == lines[#lines-1].vec[1] * -1 and v[2] == lines[#lines-1].vec[2] * -1)
+               then
+
+        local x, y = start.x+v[1], start.y+v[2]
+        if self:_posIsInArea(x,y, 1,1, #map,#map[1]) then
+          if map[x][y] == 1 then
+            line.vec = {v[1],v[2]}
+            table.insert(line, {x=x,y=y})
+            break
+          end
+        end
+      end
+    end
+
+    repeat
+      local x = line[#line].x + line.vec[1]
+      local y = line[#line].y + line.vec[2]
+
+      if self:_posIsInArea(x,y, 1,1, #map,#map[1]) then
+        if map[x][y] == 1 then
+          table.insert(line, {x=x,y=y})
+        end
+      end
+    until map[x][y] ~= 1
+
+    if
+      line[#line].x == startPos.x and
+      line[#line].y == startPos.y
+    then
+      break
+    end
+
+    table.insert(lines, {line[#line]})
+
+  end
+
+  --[[
+  local str = ""
+  for i, v in ipairs(lines) do
+    for j, w in ipairs(v) do
+      str = str..w.x..","..w.y.." "
+    end
+  end
+  error(str)
+  ]]
+
+  return lines
+  end
+
+  getLines(map)
+
   self:_imposeMap(map)
 end
 
