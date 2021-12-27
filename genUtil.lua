@@ -486,5 +486,42 @@ function Gen:_automata2()
   end
 end
 
+function Gen:_DLAInOut(map)
+  local function clamp(n, min, max)
+    local n = math.max(math.min(n, max), min)
+    return n
+  end
+
+  while true do
+    local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+    local x1,y1 = nil,nil
+    local x2,y2 = nil,nil
+
+    repeat
+      x1 = math.random(2, map.width - 2)
+      y1 = math.random(2, map.height - 2)
+    until map[x1][y1] == 0
+
+
+    local n = 0
+    while n ~= 4 do
+      local vec = math.random(1, 4-n)
+      x2 = x1 + neighbors[vec][1]
+      y2 = y1 + neighbors[vec][2]
+
+      if map[x2][y2] == 1 then
+        break
+      else
+        n = n + 1
+        table.remove(neighbors, vec)
+      end
+    end
+
+    if n ~= 4 then
+      map[x2][y2] = 0
+      break
+    end
+  end
+end
 
 return Gen

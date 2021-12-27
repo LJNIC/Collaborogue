@@ -41,7 +41,7 @@ function New:_woooork()
     for i = 1, 2 do
       self:_drunkWalk(15,15, map,
                       function(x, y)
-                        if not self:_posIsInArea(x,y, 5,5, 15,15) then
+                        if not self:_posIsInArea(x,y, 10,10, 20,20) then
                           return true
                         end
                       end
@@ -70,13 +70,8 @@ function New:_woooork()
     end
 
     for i = 1, 100 do
-      self:_DLA(map)
+      self:_DLAInOut(map)
     end
-
-    for i = 1, 5 do
-      self:_automata(map)
-    end
-
     return map
   end
 
@@ -115,134 +110,135 @@ function New:_woooork()
     local map = map
     local map1 = self:_outline(map, {{x=0,y=0}})
 
-  local function isClearAdjacent(map, x, y)
-    local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
-    local bit = false
+    local function isClearAdjacent(map, x, y)
+      local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+      local bit = false
 
-    for i, v in ipairs(neighbors) do
-      local x, y = x+v[1], y+v[2]
-      if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
-        if map[x][y] == 0 then
-          bit = true
+      for i, v in ipairs(neighbors) do
+        local x, y = x+v[1], y+v[2]
+        if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+          if map[x][y] == 0 then
+            bit = true
+          end
         end
       end
+
+      return bit
     end
 
-    return bit
-  end
-
-  local map2 = {}
-  for x = 0, #map do
-    map2[x] = {}
-    for y = 0, #map[x] do
-      if map1[x][y] == 999 then
-        map2[x][y] = 0
-      else
-        map2[x][y] = 1
-      end
-    end
-  end
-
-  for x = 0, #map do
-    for y = 0, #map[x] do
-      if map1[x][y] == 999 then
-        map[x][y] = 0
-      end
-    end
-  end
-
-  for x = 0, #map do
-    for y = 0, #map[x] do
-      if map[x][y] == 1 then
-        if isClearAdjacent(map,x,y) then
-          map2[x][y] = 1
-        else
+    local map2 = {}
+    for x = 0, #map do
+      map2[x] = {}
+      for y = 0, #map[x] do
+        if map1[x][y] == 999 then
           map2[x][y] = 0
+        else
+          map2[x][y] = 1
         end
       end
     end
-  end
 
-  return map2
-  end
-
-  local map = outlineTransformations(nest())
-
-  local function getLines(map)
-
-  local startPos = {}
-  for x = 0, #map do
-    for y = 0, #map[x] do
-      if map[x][y] == 1 then
-        startPos = {x=x,y=y}
+    for x = 0, #map do
+      for y = 0, #map[x] do
+        if map1[x][y] == 999 then
+          map[x][y] = 0
+        end
       end
     end
-  end
 
-  local lines = {{startPos}}
-  local neighbors = {
-    {-1,1},{0,1},{1,1},
-    {-1,0},      {1,0},
-    {-1,-1},{0,-1},{1,-1}
-  }
-
-  while true do
-    local line = lines[#lines]
-    local start = line[1]
-    for i, v in ipairs(neighbors) do
-      if #lines == 1 or
-        not (v[1] == lines[#lines-1].vec[1] * -1 and v[2] == lines[#lines-1].vec[2] * -1)
-               then
-
-        local x, y = start.x+v[1], start.y+v[2]
-        if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
-          if map[x][y] == 1 then
-            line.vec = {v[1],v[2]}
-            table.insert(line, {x=x,y=y})
-            break
+    for x = 0, #map do
+      for y = 0, #map[x] do
+        if map[x][y] == 1 then
+          if isClearAdjacent(map,x,y) then
+            map2[x][y] = 1
+          else
+            map2[x][y] = 0
           end
         end
       end
     end
 
-    repeat
-      local x = line[#line].x + line.vec[1]
-      local y = line[#line].y + line.vec[2]
+    return map2
+  end
 
-      if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
+
+  local function getLines(map)
+
+    local startPos = {}
+    for x = 0, #map do
+      for y = 0, #map[x] do
         if map[x][y] == 1 then
-          table.insert(line, {x=x,y=y})
+          startPos = {x=x,y=y}
         end
       end
-    until map[x][y] ~= 1
-
-    if
-      line[#line].x == startPos.x and
-      line[#line].y == startPos.y
-    then
-      break
     end
 
-    table.insert(lines, {line[#line]})
+    local lines = {{startPos}}
+    local neighbors = {
+      {-1,1},{0,1},{1,1},
+      {-1,0},      {1,0},
+      {-1,-1},{0,-1},{1,-1}
+    }
 
-  end
+    while true do
+      local line = lines[#lines]
+      local start = line[1]
+      for i, v in ipairs(neighbors) do
+        if #lines == 1 or
+          not (v[1] == lines[#lines-1].vec[1] * -1 and v[2] == lines[#lines-1].vec[2] * -1)
+        then
 
-  --[[
-  local str = ""
-  for i, v in ipairs(lines) do
-    for j, w in ipairs(v) do
-      str = str..w.x..","..w.y.." "
+          local x, y = start.x+v[1], start.y+v[2]
+          if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
+            if map[x][y] == 1 then
+              line.vec = {v[1],v[2]}
+              table.insert(line, {x=x,y=y})
+              break
+            end
+          end
+        end
+      end
+
+      repeat
+        local x = line[#line].x + line.vec[1]
+        local y = line[#line].y + line.vec[2]
+
+        if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
+          if map[x][y] == 1 then
+            table.insert(line, {x=x,y=y})
+          end
+        end
+      until map[x][y] ~= 1
+
+      if
+        line[#line].x == startPos.x and
+        line[#line].y == startPos.y
+      then
+        break
+      end
+
+      table.insert(lines, {line[#line]})
+
     end
-  end
-  error(str)
-  ]]
 
-  return lines
+
+    return lines
   end
 
-  getLines(map)
 
-  self:_imposeMap(map)
+  local function combineMaps(map1, map2)
+
+    --local map1 = outlineTransformations(map1)
+    --local map2 = outlineTransformations(map2)
+
+    --local lines1 = getLines(map1)
+    --local lines2 = getLines(map2)
+
+    --return map1
+  end
+
+
+  self:_imposeMap(clearing())
 end
 
 function New:_outline(map1, set, neighborhood)
@@ -471,8 +467,8 @@ end
 function New:_DLA(map)
   local x1,y1 = nil,nil
   repeat
-    x1 = math.random(1, map.width - 1)
-    y1 = math.random(1, map.height - 1)
+    x1 = math.random(0, map.width)
+    y1 = math.random(0, map.height)
   until map[x1][y1] == 1
 
   local function clamp(n, min, max)
@@ -502,8 +498,8 @@ function New:_drunkWalk(x, y, map, exitFunc)
 
   repeat
     local vec = math.random(1, 4)
-    x = clamp(x + neighbors[vec][1], 1, 39)
-    y = clamp(y + neighbors[vec][2], 1, 39)
+    x = clamp(x + neighbors[vec][1], 1, map.width-1)
+    y = clamp(y + neighbors[vec][2], 1, map.height-1)
 
     map[x][y] = 0
   until exitFunc(x,y) == true
