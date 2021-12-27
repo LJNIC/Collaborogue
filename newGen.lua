@@ -229,16 +229,17 @@ function New:_woooork()
   local function combineMaps(map1, map2)
 
     --local map1 = outlineTransformations(map1)
-    --local map2 = outlineTransformations(map2)
+    local map2 = outlineTransformations(map2)
 
     --local lines1 = getLines(map1)
     --local lines2 = getLines(map2)
 
-    --return map1
+    return map2
   end
 
+  local map = combineMaps(nest(), clearing())
 
-  self:_imposeMap(clearing())
+  self:_imposeMap(map, 1, 1)
 end
 
 function New:_outline(map1, set, neighborhood)
@@ -467,8 +468,8 @@ end
 function New:_DLA(map)
   local x1,y1 = nil,nil
   repeat
-    x1 = math.random(0, map.width)
-    y1 = math.random(0, map.height)
+    x1 = math.random(2, map.width-2)
+    y1 = math.random(2, map.height-2)
   until map[x1][y1] == 1
 
   local function clamp(n, min, max)
@@ -481,8 +482,8 @@ function New:_DLA(map)
     x2,y2 = x1,y1
 
     local vec = math.random(1, 4)
-    x1 = clamp(x1 + neighbors[vec][1], 1, map.width-1)
-    y1 = clamp(y1 + neighbors[vec][2], 1, map.height-1)
+    x1 = clamp(x1 + neighbors[vec][1], 2, map.width-2)
+    y1 = clamp(y1 + neighbors[vec][2], 2, map.height-2)
   until map[x1][y1] == 0
 
   map[x2][y2] = 0

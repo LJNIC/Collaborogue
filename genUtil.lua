@@ -498,8 +498,8 @@ function Gen:_DLAInOut(map)
     local x2,y2 = nil,nil
 
     repeat
-      x1 = math.random(2, map.width - 2)
-      y1 = math.random(2, map.height - 2)
+      x1 = math.random(3, map.width - 3)
+      y1 = math.random(3, map.height - 3)
     until map[x1][y1] == 0
 
 
