@@ -22,7 +22,7 @@ end
 
 function New:_create()
   math.randomseed(os.time())
-  self._map = self:_fillMap(1)
+  self._map = self:_fillMap(0)
 
   self._zoneMap = self:_newZoneMap()
   self._rooms = {}
@@ -126,7 +126,7 @@ function New:_woooork()
       return bit
     end
 
-    local map2 = {}
+    local map2 = {width = map.width, height = map.height}
     for x = 0, #map do
       map2[x] = {}
       for y = 0, #map[x] do
@@ -160,6 +160,80 @@ function New:_woooork()
 
     return map2
   end
+
+  local function outlineTransformations2(map)
+    local map = map
+    local map1 = self:_outline(map, {{x=0,y=0}})
+
+    local function isClearAdjacent(map, x, y)
+      local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
+      local bit = false
+
+      for i, v in ipairs(neighbors) do
+        local x, y = x+v[1], y+v[2]
+        if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+          if map[x][y] == 0 then
+            bit = true
+          end
+        end
+      end
+
+      return bit
+    end
+
+    local map2 = {width = map.width, height = map.height}
+    for x = 0, #map do
+      map2[x] = {}
+      for y = 0, #map[x] do
+        if map1[x][y] == 999 then
+          map2[x][y] = 0
+        else
+          map2[x][y] = 1
+        end
+      end
+    end
+
+
+    local map3 = {}
+    for x = 0, #map do
+      map3[x] = {}
+      for y = 0, #map[x] do
+        map3[x][y] = map[x][y]
+      end
+    end
+
+
+    for x = 0, #map do
+      for y = 0, #map[x] do
+        if map1[x][y] == 999 then
+          map[x][y] = 0
+        end
+      end
+    end
+
+    for x = 0, #map do
+      for y = 0, #map[x] do
+        if map[x][y] == 1 then
+          if isClearAdjacent(map,x,y) then
+            map2[x][y] = 1
+          else
+            map2[x][y] = 0
+          end
+        end
+      end
+    end
+
+    for x = 0, #map do
+      for y = 0, #map[x] do
+        if map3[x][y] == 1 and map1[x][y] == 999 then
+          map2[x][y] = 1
+        end
+      end
+    end
+
+    return map2
+  end
+
 
 
   local function getLines(map)
@@ -228,18 +302,57 @@ function New:_woooork()
 
   local function combineMaps(map1, map2)
 
-    --local map1 = outlineTransformations(map1)
+    local bmap1 = outlineTransformations2(map1)
+    local bmap2 = outlineTransformations2(map2)
+
+    local map1 = outlineTransformations(map1)
     local map2 = outlineTransformations(map2)
 
-    --local lines1 = getLines(map1)
-    --local lines2 = getLines(map2)
+    local lines1 = getLines(map1)
+    local lines2 = getLines(map2)
 
-    return map2
+    local match = nil
+    for i, v in ipairs(lines1) do
+      for i2, v2 in ipairs(lines2) do
+        if #v == #v2 and v.vec[1] == v2.vec[1] and v.vec[2] == v2.vec[2] then
+          match = {v, v2}
+          break
+        end
+      end
+    end
+
+
+    local result = self:_miniMaps(80, 80, 0)
+    local center = {x=30,y=30}
+
+    local diff1 = {x = center.x - match[1][1].x, y = center.y - match[1][2].y}
+    for x = 0, #map1 do
+      for y = 0, #map1[x] do
+        if map1[x][y] == 1 then
+          result[x+diff1.x][y+diff1.y] = 1
+        end
+      end
+    end
+
+    local diff2 = {x = center.x - match[2][1].x, y = center.y - match[2][2].y}
+    for x = 0, #map2 do
+      for y = 0, #map2[x] do
+        if map2[x][y] == 1 then
+          result[x+diff2.x][y+diff2.y] = 1
+        end
+      end
+    end
+
+    --for i, v in ipairs(match[1]) do
+      --result[v.x+diff1.x][v.y+diff1.y] = 0
+    --end
+
+    return result
   end
 
   local map = combineMaps(nest(), clearing())
-
   self:_imposeMap(map, 1, 1)
+
 end
 
 function New:_outline(map1, set, neighborhood)
