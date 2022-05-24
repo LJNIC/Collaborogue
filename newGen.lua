@@ -21,7 +21,7 @@ function New:__new(width, height)
 end
 
 function New:_create()
-  math.randomseed(os.time())
+  --math.randomseed(os.time())
   self._map = self:_fillMap(0)
 
   self._zoneMap = self:_newZoneMap()
@@ -311,44 +311,118 @@ function New:_woooork()
     local lines1 = getLines(map1)
     local lines2 = getLines(map2)
 
-    local match = nil
+    local matches = {}
     for i, v in ipairs(lines1) do
       for i2, v2 in ipairs(lines2) do
         if #v == #v2 and v.vec[1] == v2.vec[1] and v.vec[2] == v2.vec[2] then
-          match = {v, v2}
-          break
+          if #v > 2 and #v2 > 2 then
+            table.insert(matches, {v, v2})
+          end
         end
       end
     end
 
-
-    local result = self:_miniMaps(80, 80, 0)
     local center = {x=30,y=30}
 
-    local diff1 = {x = center.x - match[1][1].x, y = center.y - match[1][2].y}
-    for x = 0, #map1 do
-      for y = 0, #map1[x] do
-        if map1[x][y] == 1 then
-          result[x+diff1.x][y+diff1.y] = 1
+
+    local function constructMap(match)
+      local result = self:_miniMaps(80, 80, 0)
+
+      local diff1 = {x = center.x - match[1][1].x, y = center.y - match[1][1].y}
+      for x = 0, #map1 do
+        for y = 0, #map1[x] do
+          if map1[x][y] == 1 then
+            result[x+diff1.x][y+diff1.y] = 1
+          end
         end
       end
-    end
 
-    local diff2 = {x = center.x - match[2][1].x, y = center.y - match[2][2].y}
-    for x = 0, #map2 do
-      for y = 0, #map2[x] do
-        if map2[x][y] == 1 then
-          result[x+diff2.x][y+diff2.y] = 1
+      local diff2 = {x = center.x - match[2][1].x, y = center.y - match[2][1].y}
+      for x = 0, #map2 do
+        for y = 0, #map2[x] do
+          if map2[x][y] == 1 then
+            result[x+diff2.x][y+diff2.y] = 1
+          end
         end
       end
+
+      for i = 1, #match[1] do
+        if
+          result[center.x + match[1][i].x][center.y + match[1][i].y] == 0
+        then
+          error("whaaa?")
+        end
+      end
+
+      return result
     end
 
-    --for i, v in ipairs(match[1]) do
-      --result[v.x+diff1.x][v.y+diff1.y] = 0
-    --end
+    local function testMapShape()
+      local app = 0
+      while true do
 
+        local result = constructMap(matches[1])
+
+        local neighbors = {
+          {-1,1},{0,1},{1,1},
+          {-1,0},      {1,0},
+          {-1,-1},{0,-1},{1,-1}
+        }
+
+
+        local lastPoint = {x = center.x, y = center.y}
+        local point = {}
+
+        if result[lastPoint.x][lastPoint.y] ~= 1 then
+          error("Miss")
+        end
+
+        while true do
+          local hits = 0
+          local broken = false
+
+          for i, v in ipairs(neighbors) do
+            local x, y = lastPoint.x + v[1], lastPoint.y + v[2]
+            if x ~= lastPoint.x and y ~= lastPoint.y then
+
+              if hits > 0 then
+                broken = true
+                break
+              end
+
+              if result[x][y] == 1 then
+                point.x, point.y = x, y
+                hits = hits + 1
+              end
+
+            end
+          end
+
+          if broken == true then
+            break
+          end
+
+          if point.x == center.x and point.y == center.y then
+            error("yay")
+          end
+
+          lastPoint.x, lastPoint.y = point.x, point.y
+        end
+
+        table.remove(matches, 1)
+        if app == 1 then
+          return result
+        end
+        app = app + 1
+      end
+
+    end
+
+
+    local result = testMapShape()
     return result
   end
+
 
   local map = combineMaps(nest(), clearing())
   self:_imposeMap(map, 1, 1)
