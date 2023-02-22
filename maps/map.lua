@@ -39,12 +39,12 @@ end
 
 
 --Space
-function Map:clearSpace(x,y)
+function Map:clearPoint(x,y)
   self.map[x][y] = 0
 
   return self
 end
-function Map:fillSpace(x,y)
+function Map:fillPoint(x,y)
   self.map[x][y] = 1
 
   return self
@@ -65,7 +65,7 @@ function Map:clearArea(x1,y1, x2,y2)
   self:targetArea(
     x1,y1, x2,y2,
     function(x,y)
-      self:clearSpace(x,y)
+      self:clearPoint(x,y)
     end
   )
 
@@ -75,7 +75,7 @@ function Map:fillArea(x1,y1, x2,y2)
   self:targetArea(
     x1,y1, x2,y2,
     function(x,y)
-      self:fillSpace(x,y)
+      self:fillPoint(x,y)
     end
   )
 
@@ -97,7 +97,7 @@ function Map:clearPerimeter(x1,y1, x2,y2)
   Map:targetPerimeter(
     x1,y1, x2,y2,
     function(x,y)
-      self:clearSpace(x, y)
+      self:clearPoint(x, y)
     end
   )
 end
@@ -105,7 +105,7 @@ function Map:fillPerimeter(x1,y1, x2,y2)
   Map:targetPerimeter(
     x1,y1, x2,y2,
     function(x,y)
-      self:fillSpace(x, y)
+      self:fillPoint(x, y)
     end
   )
 end
