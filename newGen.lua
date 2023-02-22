@@ -350,7 +350,7 @@ function New:_woooork()
         if
           result[center.x + match[1][i].x][center.y + match[1][i].y] == 0
         then
-          error("whaaa?")
+          --error("whaaa?")
         end
       end
 
