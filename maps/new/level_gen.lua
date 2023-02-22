@@ -100,7 +100,7 @@ function Map:merge_maps(map_1, map_2)
 
   map:copy_map_onto_self_at_position(map_1, 0, 0, false)
   map:copy_map_onto_self_at_position(map_2, x2, y2, false)
-  :clearPoint(x1, y2)
+  :clearPoint(x1, y1)
 
   return map
 end
