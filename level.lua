@@ -2,7 +2,7 @@ local Object = require "object"
 local Scheduler = require "scheduler"
 
 local levels = {}
-levels.New = require "maps.old.level"
+levels.New = require "maps.new.level"
 
 local Level = Object:extend()
 

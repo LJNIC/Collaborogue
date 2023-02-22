@@ -2,11 +2,14 @@ local Object = require "object"
 
 local Gen = Object:extend()
 
-function Gen:fillMap(value)
+function Gen:newMap(width, height, value)
   local map = {}
-  for x = 1, self.width do
+  map.width = width
+  map.height = height
+
+  for x = 0, width do
     map[x] = {}
-    for y = 1, self.height do
+    for y = 0, height do
       map[x][y] = value
     end
   end
@@ -90,7 +93,7 @@ end
 
 --Designation
 function Gen:newZoneMap()
-  local map = self:fillMap(nil)
+  local map = self:newMap(nil)
   return map
 end
 
@@ -199,7 +202,7 @@ end
 function Gen:dijkstra(set, neighborhood)
   local neighborhood = neighborhood or "vonNeuman"
   local neighbors = self:getNeighborhood(neighborhood)
-  local map = self:fillMap(999)
+  local map = self:newMap(999)
   local traveled = {}
 
   for i, v in ipairs(set) do
