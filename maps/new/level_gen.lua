@@ -68,12 +68,15 @@ function Map:find_merge_point_between_maps(map_1, map_2)
 
   local matches = getMatches(edges_1, edges_2)
 
+  --odd
   --same size
   --same shape
 
+  --[[
   local merge_point_x, merge_point_y = matches[1][1][2].x, matches[1][1][2].y
   local padding_x, padding_y = map_1:getPadding()
   local offset_x, offset_y = (matches[1][1][2].y - matches[1][2][2].y)/2+padding_x, (matches[1][1][2].x - matches[1][2][2].x)/2+padding_y
+  --]]
 
   -- Get a list of room edges
   -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
@@ -81,22 +84,23 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   -- if you run out of matches rotate a room
   -- if you run out of rotations make a new map
 
-  return merge_point_x, merge_point_y, offset_x, offset_y
+  local x1, y1 = matches[1][1][2].x, matches[1][1][2].y
+  local x2, y2 = (matches[1][1][2].x - matches[1][2][2].x), (matches[1][1][2].y - matches[1][2][2].y)
+
+  return x1, y1, x2, y2
 end
 
 function Map:merge_maps(map_1, map_2)
-  local merge_point_x, merge_point_y, offset_x, offset_y = Map:find_merge_point_between_maps(map_1, map_2)
+  local x1, y1, x2, y2 = Map:find_merge_point_between_maps(map_1, map_2)
 
   local map_1_max_length = math.max(map_1.width, map_1.height)
   local map_2_max_length = math.max(map_2.width, map_2.height)
   local map_length = map_1_max_length + map_2_max_length
   local map = Map:new(map_length, map_length, 0)
 
-  local position_x, position_y = merge_point_x-offset_x, merge_point_y-offset_y
-
   map:copy_map_onto_self_at_position(map_1, 0, 0, false)
-  map:copy_map_onto_self_at_position(map_2, position_x, position_y, false)
-  :clearPoint(merge_point_x, merge_point_y)
+  map:copy_map_onto_self_at_position(map_2, x2, y2, false)
+  :clearPoint(x1, y2)
 
   return map
 end
