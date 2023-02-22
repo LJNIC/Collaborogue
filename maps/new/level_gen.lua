@@ -25,22 +25,6 @@ end
 function Level:create()
   local map = Map:new(100, 100, 0)
 
-  --[[
-  local room_1 = Map:new(6, 6, 1)
-  room_1
-  :clearArea(1,1, room_1.width-1, room_1.height-1)
-  :clearPoint(0,math.floor(room_1.height/2))
-
-  local room_2 = Map:new(6, 6, 1)
-  room_2
-  :clearArea(1,1, room_2.width-1, room_2.height-1)
-  --:clearPoint(0,math.floor(room_2.height/2))
-
-  local room_3 = Map:merge_maps(room_1, room_2)
-  --]]
-  
-  -- -------------------------------------------------------------------------- --
-
   local room_1 = Map:new(6, 6, 1)
   room_1
   :clearArea(2,2, room_1.width-2, room_1.height-2)
@@ -55,14 +39,11 @@ function Level:create()
 
 
   -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
-  --:clearPoint(0,math.floor(room_1.height/2))
 
   -- -------------------------------------------------------------------------- --
 
 
   map:copy_map_onto_self_at_position(room_3, 0, 0)
-
-
 
   return map
 end
@@ -86,24 +67,13 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   local edges_2 = map_2:find_edges()
 
   local matches = getMatches(edges_1, edges_2)
-  print(#matches)
 
   --same size
   --same shape
-  --do matches work right?
 
   local merge_point_x, merge_point_y = matches[1][1][2].x, matches[1][1][2].y
-  local offset_x, offset_y = (matches[1][1][2].y - matches[1][2][2].y)/2+2, (matches[1][1][2].x - matches[1][2][2].x)/2+2
-  print(offset_x, offset_y)
-
-
-  --[[ Stuff I don't need
-  for i, v in ipairs(edges) do
-    for i2, v2 in ipairs(v) do
-      print(i, #v, v2.x, v2.y)
-    end
-  end
-  --]]
+  local padding_x, padding_y = map_1:getPadding()
+  local offset_x, offset_y = (matches[1][1][2].y - matches[1][2][2].y)/2+padding_x, (matches[1][1][2].x - matches[1][2][2].x)/2+padding_y
 
   -- Get a list of room edges
   -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
@@ -131,6 +101,39 @@ function Map:merge_maps(map_1, map_2)
   return map
 end
 
+function Map:getPadding()
+  local padding_x, padding_y = 0, 0
+
+  for x = 0, self.width do
+    local binary = false
+    for y = 0, self.height do
+      if self.map[x][y] == 1 then
+        binary = true
+        break
+      end
+    end
+    if binary == true then
+      break
+    end
+    padding_x = padding_x + 1
+  end
+
+  for y = 0, self.height do
+    local binary = false
+    for x = 0, self.width do
+      if self.map[x][y] == 1 then
+        binary = true
+        break
+      end
+    end
+    if binary == true then
+      break
+    end
+    padding_y = padding_y + 1
+  end
+
+  return padding_x, padding_y
+end
 
 
 function Map:new_from_outline()
