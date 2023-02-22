@@ -17,7 +17,7 @@ function Level:create()
   local room_2 = Map:new(6, 6, 1)
   room_2
   :clearArea(1,1, room_2.width-1, room_2.height-1)
-  :clearPoint(0,math.floor(room_2.height/2))
+  --:clearPoint(0,math.floor(room_2.height/2))
   
   local room_3 = Map:merge_maps(room_1, room_2)
 
@@ -32,6 +32,8 @@ function Map:copy_map_onto_self_at_position(map, x, y)
       self.map[i][i2] = map.map[i-x][i2-y]
     end
   end
+
+  return self
 end
 
 function Map:merge_maps(map_1, map_2)
@@ -40,11 +42,13 @@ function Map:merge_maps(map_1, map_2)
   local map_length = map_1_max_length + map_2_max_length
   local map = Map:new(map_length, map_length, 0)
 
+  local merge_point_x, merge_point_y = map_1.width, map_1.height/2
+  local offset_x, offset_y = 0, map_1.height/2
+  local position_x, position_y = merge_point_x-offset_x, merge_point_y-offset_y
 
-  local merge_point_x = map_1.width
-  local merge_point_y = 0
   map:copy_map_onto_self_at_position(map_1, 0, 0)
-  map:copy_map_onto_self_at_position(map_2, merge_point_x, merge_point_y)
+  map:copy_map_onto_self_at_position(map_2, position_x, position_y)
+  :clearPoint(merge_point_x, merge_point_y)
 
   return map
 end
