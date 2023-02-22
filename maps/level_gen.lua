@@ -1,4 +1,4 @@
-local Gen = require "genUtil"
+local Gen = require "maps.procgen"
 
 function Gen:_fillMap(value)
   local map = {}

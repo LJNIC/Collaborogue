@@ -1,9 +1,8 @@
-local MeadowGen = require "meadowGen"
+local NewGen = require "maps.level_gen"
 
-local function Meadow(level)
-  local Gen = MeadowGen(40, 40)
+local function New(level)
+  local Gen = NewGen(100, 100)
   local map = Gen:_create()
-  local rooms = map._rooms
 
   local function spawnActor(actor, x, y)
     local x, y = x or _x, y or _y
@@ -11,7 +10,6 @@ local function Meadow(level)
     actor.position.y = y
     level:addActor(actor)
   end
-
 
   for k, v in pairs(map._markers) do
     for _, w in ipairs(v) do
@@ -30,8 +28,8 @@ local function Meadow(level)
     end
   end
 
-
+  spawnActor(game.Player, 15, 15)
   return map
 end
 
-return Meadow
+return New

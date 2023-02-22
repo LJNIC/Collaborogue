@@ -34,9 +34,6 @@ loadItems("conditions", conditions, true)
 loadItems("actors", actors, true)
 Loot = require "loot"
 
-local levelOrder =
-  {"Meadow", "Meadow", "City", "Cave", "Nest"}
-
 local Level = require "level"
 local Interface = require "interface"
 local Display = require "display.display"
@@ -46,7 +43,6 @@ local Start = require "panels.start"
 -- Global
 
 game = {}
-game.levelOrderNum = 1
 
 function love.load()
   min_dt = 1/30 --fps
@@ -68,8 +64,7 @@ function love.load()
 
   local interface = Interface(display)
   interface:push(Start(display, interface))
-  local level = Level(levelOrder[game.levelOrderNum])
-  game.levelOrderNum = game.levelOrderNum + 1
+  local level = Level()
 
   game.level = level
   game.interface = interface
