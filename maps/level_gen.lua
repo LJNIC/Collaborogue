@@ -1,10 +1,10 @@
 local Gen = require "maps.procgen"
 
-function Gen:_fillMap(value)
+function Gen:fillMap(value)
   local map = {}
-  for x = 0, self._width do
+  for x = 0, self.width do
     map[x] = {}
-    for y = 0, self._height do
+    for y = 0, self.height do
       map[x][y] = value
     end
   end
@@ -15,47 +15,47 @@ end
 local New = Gen:extend()
 
 function New:__new(width, height)
-  self._width = width
-  self._height = height
+  self.width = width
+  self.height = height
 
 end
 
-function New:_create()
+function New:create()
   --math.randomseed(os.time())
-  self._map = self:_fillMap(0)
+  self.map = self:fillMap(0)
 
-  self._zoneMap = self:_newZoneMap()
-  self._rooms = {}
-  self._markedMap = self:_newMarkedMap()
-  self._markers = {}
+  self.zoneMap = self:newZoneMap()
+  self.rooms = {}
+  self.markedMap = self:newMarkedMap()
+  self.markers = {}
 
-  self:_woooork()
+  self:woooork()
   
   return self
 end
 
-function New:_woooork()
+function New:woooork()
 
   local function nest()
-    local map = self:_miniMaps(30,30)
+    local map = self:miniMaps(30,30)
     for i = 1, 2 do
-      self:_drunkWalk(15,15, map,
+      self:drunkWalk(15,15, map,
                       function(x, y)
-                        if not self:_posIsInArea(x,y, 10,10, 20,20) then
+                        if not self:posIsInArea(x,y, 10,10, 20,20) then
                           return true
                         end
                       end
       )
     end
     for i = 1, 200 do
-      self:_DLA(map)
+      self:DLA(map)
     end
     return map
   end
 
 
   local function clearing()
-    local map = self:_miniMaps(20,20)
+    local map = self:miniMaps(20,20)
 
     for x = 8, 12 do
       for y = 8, 12 do
@@ -70,18 +70,18 @@ function New:_woooork()
     end
 
     for i = 1, 100 do
-      self:_DLAInOut(map)
+      self:DLAInOut(map)
     end
     return map
   end
 
 
   local function entrance()
-    local map = self:_miniMaps(6,6)
+    local map = self:miniMaps(6,6)
     for i = 1, 1 do
-      self:_drunkWalk(3,3, map,
+      self:drunkWalk(3,3, map,
                       function(x, y)
-                        if not self:_posIsInArea(x,y, 0,0, 6,6) then
+                        if not self:posIsInArea(x,y, 0,0, 6,6) then
                           return true
                         end
                       end
@@ -91,11 +91,11 @@ function New:_woooork()
   end
 
   local function exit()
-    local map = self:_miniMaps(6,6)
+    local map = self:miniMaps(6,6)
     for i = 1, 1 do
-      self:_drunkWalk(3,3, map,
+      self:drunkWalk(3,3, map,
                       function(x, y)
-                        if not self:_posIsInArea(x,y, 0,0, 6,6) then
+                        if not self:posIsInArea(x,y, 0,0, 6,6) then
                           return true
                         end
                       end
@@ -108,7 +108,7 @@ function New:_woooork()
 
   local function outlineTransformations(map)
     local map = map
-    local map1 = self:_outline(map, {{x=0,y=0}})
+    local map1 = self:outline(map, {{x=0,y=0}})
 
     local function isClearAdjacent(map, x, y)
       local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
@@ -116,7 +116,7 @@ function New:_woooork()
 
       for i, v in ipairs(neighbors) do
         local x, y = x+v[1], y+v[2]
-        if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+        if self:posIsInArea(x, y, 0,0, map.width,map.height) then
           if map[x][y] == 0 then
             bit = true
           end
@@ -163,7 +163,7 @@ function New:_woooork()
 
   local function outlineTransformations2(map)
     local map = map
-    local map1 = self:_outline(map, {{x=0,y=0}})
+    local map1 = self:outline(map, {{x=0,y=0}})
 
     local function isClearAdjacent(map, x, y)
       local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
@@ -171,7 +171,7 @@ function New:_woooork()
 
       for i, v in ipairs(neighbors) do
         local x, y = x+v[1], y+v[2]
-        if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+        if self:posIsInArea(x, y, 0,0, map.width,map.height) then
           if map[x][y] == 0 then
             bit = true
           end
@@ -263,7 +263,7 @@ function New:_woooork()
         then
 
           local x, y = start.x+v[1], start.y+v[2]
-          if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
+          if self:posIsInArea(x,y, 0,0, #map,#map[1]) then
             if map[x][y] == 1 then
               line.vec = {v[1],v[2]}
               table.insert(line, {x=x,y=y})
@@ -277,7 +277,7 @@ function New:_woooork()
         local x = line[#line].x + line.vec[1]
         local y = line[#line].y + line.vec[2]
 
-        if self:_posIsInArea(x,y, 0,0, #map,#map[1]) then
+        if self:posIsInArea(x,y, 0,0, #map,#map[1]) then
           if map[x][y] == 1 then
             table.insert(line, {x=x,y=y})
           end
@@ -326,7 +326,7 @@ function New:_woooork()
 
 
     local function constructMap(match)
-      local result = self:_miniMaps(80, 80, 0)
+      local result = self:miniMaps(80, 80, 0)
 
       local diff1 = {x = center.x - match[1][1].x, y = center.y - match[1][1].y}
       for x = 0, #map1 do
@@ -425,14 +425,14 @@ function New:_woooork()
 
 
   local map = combineMaps(nest(), clearing())
-  self:_imposeMap(map, 1, 1)
+  self:imposeMap(map, 1, 1)
 
 end
 
-function New:_outline(map1, set, neighborhood)
+function New:outline(map1, set, neighborhood)
   local neighborhood = neighborhood or "vonNeuman"
-  local neighbors = self:_getNeighborhood(neighborhood)
-  local map = self:_miniMaps(map1.width, map1.height, 999)
+  local neighbors = self:getNeighborhood(neighborhood)
+  local map = self:miniMaps(map1.width, map1.height, 999)
   local traveled = {}
 
   for i, v in ipairs(set) do
@@ -448,7 +448,7 @@ function New:_outline(map1, set, neighborhood)
 
     for i, v in ipairs(neighbors) do
       local x, y = x+v[1], y+v[2]
-      if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+      if self:posIsInArea(x, y, 0,0, map.width,map.height) then
         if map[x][y] == 0 then
           bit = true
         end
@@ -504,7 +504,7 @@ function New:_outline(map1, set, neighborhood)
 
     for _, v in pairs(neighbors) do
       local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
-      if self:_posIsInArea(newPos.x, newPos.y, 0,0, map1.width,map1.height) then
+      if self:posIsInArea(newPos.x, newPos.y, 0,0, map1.width,map1.height) then
         if not isClear(newPos.x, newPos.y) then
           if not isClearAdjacent(map1, mdp.x, mdp.y) then
             map[newPos.x][newPos.y] = math.min(mdp.v + 1, map[newPos.x][newPos.y])
@@ -519,7 +519,7 @@ function New:_outline(map1, set, neighborhood)
 end
 
 
-function New:_miniMaps(width, height, value)
+function New:miniMaps(width, height, value)
   local map = {}
   map.width = width
   map.height = height
@@ -532,16 +532,16 @@ function New:_miniMaps(width, height, value)
   return map
 end
 
-function New:_imposeMap(map, tx, ty)
+function New:imposeMap(map, tx, ty)
   local tx,ty = tx or 0, ty or 0
   for x = 0, #map do
     for y = 0, #map[x] do
-      self._map[x+tx][y+ty] = map[x][y]
+      self.map[x+tx][y+ty] = map[x][y]
     end
   end
 end
 
-function New:_combineMaps(map1, map2)
+function New:combineMaps(map1, map2)
   local map = {}
   map.width = map1.width + map2.width
   map.height = map1.height + map2.height
@@ -552,7 +552,7 @@ function New:_combineMaps(map1, map2)
 
     for i, v in ipairs(neighbors) do
       local x, y = x+v[1], y+v[2]
-      if self:_posIsInArea(x, y, 0,0, map.width,map.height) then
+      if self:posIsInArea(x, y, 0,0, map.width,map.height) then
         if map[x][y] == 0 then
           bit = true
         end
@@ -596,12 +596,12 @@ function New:_combineMaps(map1, map2)
   return map
 end
 
-function New:_isOverlap(x1, y1, x2, y2)
+function New:isOverlap(x1, y1, x2, y2)
   local bit = false
 
   for x = x1, x2 do
     for y = y1, y2 do
-      if self._zoneMap[x][y] ~= nil then
+      if self.zoneMap[x][y] ~= nil then
         bit = true
         break
       end
@@ -610,49 +610,49 @@ function New:_isOverlap(x1, y1, x2, y2)
   return bit
 end
 
-function New:_generateHall(room1, room2)
-  self:_guidedDrunkWalk(
-    self._rooms[room1].centerX, self._rooms[room1].centerY,
-    self._rooms[room2].centerX, self._rooms[room2].centerY,
-    self._zoneMap, room2
+function New:generateHall(room1, room2)
+  self:guidedDrunkWalk(
+    self.rooms[room1].centerX, self.rooms[room1].centerY,
+    self.rooms[room2].centerX, self.rooms[room2].centerY,
+    self.zoneMap, room2
   )
 end
 
-function New:_generateRooms()
-  self:_defineRoom(8,8, 10,10, "clearing", "Box")
+function New:generateRooms()
+  self:defineRoom(8,8, 10,10, "clearing", "Box")
 
-  self:_defineRoom(1,1, 3,3, "entrance", "Player")
-  self:_defineRoom(1,1, 3,3, "exit", "Stairs")
-  self:_defineRoom(1,1, 3,3, "prism", "Prism")
-  self:_defineRoom(1,1, 3,3, "boss", "Webweaver")
-  self:_defineRoom(1,1, 3,3, "treasure", "Shard")
+  self:defineRoom(1,1, 3,3, "entrance", "Player")
+  self:defineRoom(1,1, 3,3, "exit", "Stairs")
+  self:defineRoom(1,1, 3,3, "prism", "Prism")
+  self:defineRoom(1,1, 3,3, "boss", "Webweaver")
+  self:defineRoom(1,1, 3,3, "treasure", "Shard")
 
-  self:_generateHall("entrance", "clearing")
-  self:_generateHall("exit", "clearing")
-  self:_generateHall("boss", "clearing")
-  self:_generateHall("prism", "clearing")
-  self:_generateHall("boss", "treasure")
+  self:generateHall("entrance", "clearing")
+  self:generateHall("exit", "clearing")
+  self:generateHall("boss", "clearing")
+  self:generateHall("prism", "clearing")
+  self:generateHall("boss", "treasure")
 
   for i = 1, 100 do
-    self:_DLA()
+    self:DLA()
   end
 
 end
 
-function New:_defineRoom(wMin,wMax, hMin,hMax, identifier, actor)
+function New:defineRoom(wMin,wMax, hMin,hMax, identifier, actor)
   local width, height = math.random(wMin, wMax),math.random(hMin, hMax)
   local x, y = nil
   repeat
     x,y = math.random(1+width,39-width),math.random(1+height,39-height)
-  until self:_isOverlap(x,y, x+width,y+height) == false
+  until self:isOverlap(x,y, x+width,y+height) == false
 
-  self:_markSpace(x,y, actor)
-  self:_designateZoning(x,y, width,height, identifier)
+  self:markSpace(x,y, actor)
+  self:designateZoning(x,y, width,height, identifier)
 
-  self:_clearArea(x,y, x+width-1,y+height-1)
+  self:clearArea(x,y, x+width-1,y+height-1)
 end
 
-function New:_DLA(map)
+function New:DLA(map)
   local x1,y1 = nil,nil
   repeat
     x1 = math.random(2, map.width-2)
@@ -676,7 +676,7 @@ function New:_DLA(map)
   map[x2][y2] = 0
 end
 
-function New:_drunkWalk(x, y, map, exitFunc)
+function New:drunkWalk(x, y, map, exitFunc)
   local x, y = x, y
   local neighbors = {{1,0},{-1,0},{0,1},{0,-1}}
   local function clamp(n, min, max)
@@ -693,7 +693,7 @@ function New:_drunkWalk(x, y, map, exitFunc)
   until exitFunc(x,y) == true
 end
 
-function New:_guidedDrunkWalk(x1, y1, x2, y2, map, limit)
+function New:guidedDrunkWalk(x1, y1, x2, y2, map, limit)
   local x, y = x1, y1
 
   local neighbors = {}
@@ -715,7 +715,7 @@ function New:_guidedDrunkWalk(x1, y1, x2, y2, map, limit)
   end
 
   repeat
-    self:_clearSpace(x, y)
+    self:clearSpace(x, y)
     local vec = math.random(1, 2)
     x = clamp(x + neighbors[vec][1], math.min(x1, x2), math.max(x1, x2))
     y = clamp(y + neighbors[vec][2], math.min(y1, y2), math.max(y1, y2))

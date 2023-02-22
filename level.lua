@@ -35,9 +35,9 @@ function Level:__new(mapType)
   local map = mapType(self)
 --
 
-  self.map = map._map
-  self.width = map._width
-  self.height = map._height
+  self.map = map.map
+  self.width = map.width
+  self.height = map.height
 
   -- Some initialization on the lighting
   self.lighting = ROT.Lighting(self:getLightReflectivityCallback(), {range = 50, passes = 3})

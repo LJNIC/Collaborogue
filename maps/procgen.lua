@@ -2,11 +2,11 @@ local Object = require "object"
 
 local Gen = Object:extend()
 
-function Gen:_fillMap(value)
+function Gen:fillMap(value)
   local map = {}
-  for x = 1, self._width do
+  for x = 1, self.width do
     map[x] = {}
-    for y = 1, self._height do
+    for y = 1, self.height do
       map[x][y] = value
     end
   end
@@ -14,55 +14,55 @@ function Gen:_fillMap(value)
 end
 
 --Checks
-function Gen:_posIsInArea(x,y, xMin,yMin, xMax,yMax)
+function Gen:posIsInArea(x,y, xMin,yMin, xMax,yMax)
   if x >= xMin and x <= xMax and y >= yMin and y <= yMax then
     return true
   else
     return false
   end
 end
-function Gen:_posIsInMap(x,y)
-  return Gen:_posIsInArea(x,y, 1,1, self._width,self._height)
+function Gen:posIsInMap(x,y)
+  return Gen:posIsInArea(x,y, 1,1, self.width,self.height)
 end
 
 
 --Space
-function Gen:_clearSpace(x,y)
-  self._map[x][y] = 0
+function Gen:clearSpace(x,y)
+  self.map[x][y] = 0
 end
-function Gen:_fillSpace(x,y)
-  self._map[x][y] = 1
+function Gen:fillSpace(x,y)
+  self.map[x][y] = 1
 end
 
 
 --Area
-function Gen:_targetArea(x1,y1, x2,y2, func)
+function Gen:targetArea(x1,y1, x2,y2, func)
   for x = x1, x2 do
     for y = y1, y2 do
       func(x, y)
     end
   end
 end
-function Gen:_clearArea(x1,y1, x2,y2)
-  self:_targetArea(
+function Gen:clearArea(x1,y1, x2,y2)
+  self:targetArea(
     x1,y1, x2,y2,
     function(x,y)
-      self:_clearSpace(x,y)
+      self:clearSpace(x,y)
     end
   )
 end
-function Gen:_fillArea(x1,y1, x2,y2)
-  self:_targetArea(
+function Gen:fillArea(x1,y1, x2,y2)
+  self:targetArea(
     x1,y1, x2,y2,
     function(x,y)
-      self:_fillSpace(x,y)
+      self:fillSpace(x,y)
     end
   )
 end
 
 --Perimeter
-function Gen:_targetPerimeter(x1,y1, x2,y2, func)
-  Gen:_targetArea(
+function Gen:targetPerimeter(x1,y1, x2,y2, func)
+  Gen:targetArea(
     x1,y1, x2,y2,
     function(x,y)
       if x==x1 or x==x2 or y==y1 or y==y2 then
@@ -71,38 +71,38 @@ function Gen:_targetPerimeter(x1,y1, x2,y2, func)
     end
   )
 end
-function Gen:_clearPerimeter(x1,y1, x2,y2)
-  Gen:_targetPerimeter(
+function Gen:clearPerimeter(x1,y1, x2,y2)
+  Gen:targetPerimeter(
     x1,y1, x2,y2,
     function(x,y)
-      self:_clearSpace(x, y)
+      self:clearSpace(x, y)
     end
   )
 end
-function Gen:_fillPerimeter(x1,y1, x2,y2)
-  Gen:_targetPerimeter(
+function Gen:fillPerimeter(x1,y1, x2,y2)
+  Gen:targetPerimeter(
     x1,y1, x2,y2,
     function(x,y)
-      self:_fillSpace(x, y)
+      self:fillSpace(x, y)
     end
   )
 end
 
 --Designation
-function Gen:_newZoneMap()
-  local map = self:_fillMap(nil)
+function Gen:newZoneMap()
+  local map = self:fillMap(nil)
   return map
 end
 
-function Gen:_designateZoning(x, y, width, height, identifier)
+function Gen:designateZoning(x, y, width, height, identifier)
   local width, height = width, height
   local centerX = x + math.floor(width/2)
   local centerY = y + math.floor(height/2)
   local x1, y1 = x, y
   local x2, y2 = x1 + width - 1, y1 + height - 1
-  local identifier = identifier or (#self._rooms + 1)
+  local identifier = identifier or (#self.rooms + 1)
 
-  self._rooms[identifier] = {
+  self.rooms[identifier] = {
     width = width, height = height,
     centerX = centerX, centerY = centerY,
     x1 = x1, y1 = y1,
@@ -111,33 +111,33 @@ function Gen:_designateZoning(x, y, width, height, identifier)
 
   for x = x1, x2 do
     for y = y1, y2 do
-      self._zoneMap[x][y] = identifier
+      self.zoneMap[x][y] = identifier
     end
   end
 end
 
-function Gen:_newMarkedMap()
+function Gen:newMarkedMap()
   local map = {}
-  for x = 1, self._width do
+  for x = 1, self.width do
     map[x] = {}
-    for y = 1, self._height do
+    for y = 1, self.height do
       map[x][y] = "blank"
     end
   end
   return map
 end
-function Gen:_markSpace(x, y, thingStr)
-  local markers = self._markers
+function Gen:markSpace(x, y, thingStr)
+  local markers = self.markers
   markers[thingStr] = markers[thingStr] or {}
 
-  self._markedMap[x][y] = thingStr
+  self.markedMap[x][y] = thingStr
   table.insert(markers[thingStr], {x=x, y=y})
 end
 
 
 --ProcGen
 
-function Gen:_rollGrowthPotential(cell, probability, max, min)
+function Gen:rollGrowthPotential(cell, probability, max, min)
   local size = min or 1
 
   while size < max do
@@ -151,7 +151,7 @@ function Gen:_rollGrowthPotential(cell, probability, max, min)
   return size
 end
 
-function Gen:_getNeighborhood(choice)
+function Gen:getNeighborhood(choice)
   local neighborhood = {}
 
   neighborhood.vonNeuman = {
@@ -175,18 +175,18 @@ function Gen:_getNeighborhood(choice)
   return neighborhood[choice]
 end
 
-function Gen:_spacePropogation(value, neighborhood, cell, size)
-  local neighborhood = self:_getNeighborhood(neighborhood)
+function Gen:spacePropogation(value, neighborhood, cell, size)
+  local neighborhood = self:getNeighborhood(neighborhood)
  
-  self._map[cell.x][cell.y] = value
+  self.map[cell.x][cell.y] = value
 
   local function recurse(cell, size)
     if size > 0 then
       for _, v in pairs(neighborhood) do
         local x = cell.x + v[1]
         local y = cell.y + v[2]
-        if self:_posIsInMap(x, y) then
-          self._map[x][y] = value
+        if self:posIsInMap(x, y) then
+          self.map[x][y] = value
           recurse({x=x,y=y}, size - 1)
         end
       end
@@ -196,10 +196,10 @@ function Gen:_spacePropogation(value, neighborhood, cell, size)
   recurse(cell, size)
 end
 
-function Gen:_dijkstra(set, neighborhood)
+function Gen:dijkstra(set, neighborhood)
   local neighborhood = neighborhood or "vonNeuman"
-  local neighbors = self:_getNeighborhood(neighborhood)
-  local map = self:_fillMap(999)
+  local neighbors = self:getNeighborhood(neighborhood)
+  local map = self:fillMap(999)
   local traveled = {}
 
   for i, v in ipairs(set) do
@@ -207,7 +207,7 @@ function Gen:_dijkstra(set, neighborhood)
   end
 
   local function isWall(x, y)
-    return self._map[x][y] == 1
+    return self.map[x][y] == 1
   end
 
   local function isTraveled(x, y)
@@ -235,8 +235,8 @@ function Gen:_dijkstra(set, neighborhood)
     local mdp = minimumDistancePos
 
 
-    for x = 1, self._width do
-      for y = 1, self._height do
+    for x = 1, self.width do
+      for y = 1, self.height do
         if not isWall(x, y) then
           if not isTraveled(x, y) then
             mdp = getLeast(mdp, x, y)
@@ -254,7 +254,7 @@ function Gen:_dijkstra(set, neighborhood)
 
     for _, v in pairs(neighbors) do
       local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
-      if self:_posIsInMap(newPos.x, newPos.y) then
+      if self:posIsInMap(newPos.x, newPos.y) then
         if not isWall(newPos.x, newPos.y) then
           map[newPos.x][newPos.y] = math.min(mdp.v + 1, map[newPos.x][newPos.y])
         end
@@ -267,7 +267,7 @@ function Gen:_dijkstra(set, neighborhood)
 end
 
 
-function Gen:_aStar(x1,y1, x2,y2)
+function Gen:aStar(x1,y1, x2,y2)
 
   local vonNeuman = {
     n = {0, -1},
@@ -277,9 +277,9 @@ function Gen:_aStar(x1,y1, x2,y2)
   }
 
   local aMap = {}
-  for x = 1, self._width do
+  for x = 1, self.width do
     aMap[x] = {}
-    for y = 1, self._height do
+    for y = 1, self.height do
       aMap[x][y] = 0
     end
   end
@@ -324,8 +324,8 @@ function Gen:_aStar(x1,y1, x2,y2)
     end
 
     for k, v in pairs(vonNeuman) do
-      if self:_posIsInMap(nextNode.x + v[1], nextNode.y + v[2]) then
-        if self._map[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
+      if self:posIsInMap(nextNode.x + v[1], nextNode.y + v[2]) then
+        if self.map[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
           local newNode = {}
           newNode.x = nextNode.x + v[1]
           newNode.y = nextNode.y + v[2]
@@ -380,7 +380,7 @@ function Gen:_aStar(x1,y1, x2,y2)
   return aPath
 end
 
-function Gen:_automata(map)
+function Gen:automata(map)
   local neighbors = {
     {-1,1},{0,1},{1,1},
     {-1,0},      {1,0},
@@ -399,7 +399,7 @@ function Gen:_automata(map)
     for y = 1, #map[x] do
       local numOfNeighbors = 0
       for i, v in ipairs(neighbors) do
-        if self:_posIsInArea(x+v[1], y+v[2], 1,1,#map,#map[x]) then
+        if self:posIsInArea(x+v[1], y+v[2], 1,1,#map,#map[x]) then
           if map[x+v[1]][y+v[2]] == 1 then
             numOfNeighbors = numOfNeighbors + 1
           end
@@ -432,7 +432,7 @@ function Gen:_automata(map)
 
 end
 
-function Gen:_automata2()
+function Gen:automata2()
   local perms = {}
   local square = {1,1,1, 0,0, 0,0,0}
 
@@ -455,7 +455,7 @@ function Gen:_automata2()
   table.insert(perms, mirrorX(square))
 
   local function match(x,y, comp)
-    local map = self._map
+    local map = self.map
     local neighbors = {
       {-1,1},{0,1},{1,1},
       {-1,0},      {1,0},
@@ -475,18 +475,18 @@ function Gen:_automata2()
     return bit
   end
 
-  for x = 2, self._width-1 do
-    for y = 2, self._height-1 do
+  for x = 2, self.width-1 do
+    for y = 2, self.height-1 do
       for i, v in ipairs(perms) do
         if match(x,y, v) then
-          self._map[x][y] = 1
+          self.map[x][y] = 1
         end
       end
     end
   end
 end
 
-function Gen:_DLAInOut(map)
+function Gen:DLAInOut(map)
   local function clamp(n, min, max)
     local n = math.max(math.min(n, max), min)
     return n
