@@ -12,6 +12,7 @@ local function New(level)
   end
 
   spawnActor(game.Player, 0, 0)
+  --spawnActor(game.Player, 6, 6)
   return map
 end
 
