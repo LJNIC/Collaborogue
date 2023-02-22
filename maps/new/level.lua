@@ -1,4 +1,4 @@
-local NewGen = require "maps.level_gen"
+local NewGen = require "maps.old.level_gen"
 
 local function New(level)
   local Gen = NewGen(100, 100)
