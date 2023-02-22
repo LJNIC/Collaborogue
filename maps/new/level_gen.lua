@@ -6,6 +6,22 @@ local Level = Object:extend()
 function Level:__new()
 end
 
+local function getMatches(lines1, lines2)
+  -- This is strict for testing purposes
+  local matches = {}
+  for i, v in ipairs(lines1) do
+    for i2, v2 in ipairs(lines2) do
+      if (#v == #v2) and (v.vec[1] == v2.vec[1] and v.vec[2] == v2.vec[2]) then
+        if (#v > 2) and (#v2 > 2) then
+          table.insert(matches, {v, v2})
+        end
+      end
+    end
+  end
+
+  return matches
+end
+
 function Level:create()
   local map = Map:new(100, 100, 0)
 
@@ -23,19 +39,39 @@ function Level:create()
   
   -- -------------------------------------------------------------------------- --
 
-  local room_1 = Map:new(10, 10, 1)
+  local room_1 = Map:new(6, 6, 1)
   room_1
-  :clearArea(4,4, room_1.width-4, room_1.height-4)
+  :clearArea(2,2, room_1.width-2, room_1.height-2)
   
-  room_outline = room_1:new_from_outline()
-  local edges = room_outline:find_edges()
-  -- I'll likely need a function to fill holes, air tiles surrounded by wall times
+  local room_1_outline = room_1:new_from_outline()
+  local edges_1 = room_1_outline:find_edges()
+
+  local room_2 = Map:new(6, 6, 1)
+  room_2
+  :clearArea(2,2, room_2.width-2, room_2.height-2)
+  
+  local room_2_outline = room_2:new_from_outline()
+  local edges_2 = room_2_outline:find_edges()
+
+  local matches = getMatches(edges_1, edges_2)
+  print(#matches)
+
+
+  --[[ Stuff I don't need
+  for i, v in ipairs(edges) do
+    for i2, v2 in ipairs(v) do
+      print(i, #v, v2.x, v2.y)
+    end
+  end
+  --]]
+  -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
   --:clearPoint(0,math.floor(room_1.height/2))
 
   -- -------------------------------------------------------------------------- --
 
 
-  map:copy_map_onto_self_at_position(room_outline, 1, 1)
+  map:copy_map_onto_self_at_position(room_1_outline, 1, 1)
+  map:copy_map_onto_self_at_position(room_2_outline, 8, 1)
 
 
 
@@ -127,16 +163,14 @@ function Map:find_edges()
     local start = edge[1] -- Starting position is the first element
     for k, v in pairs(Map:getNeighborhood('moore')) do
       if #edges == 1 or -- If there's only one edge
-        not (v[1] == edges[#edges-1].vec[1] * -1 and v[2] == edges[#edges-1].vec[2] * -1) --?
+        not ( (v[1] == edges[#edges-1].vec[1] * -1) and (v[2] == edges[#edges-1].vec[2] * -1)) -- if not the direction we came from
       then
 
         local x, y = start.x+v[1], start.y+v[2] -- Check from the starting point + a neighbor
-        if self:posIsInArea(x,y, 0,0, #self.map,#self.map[1]) then -- If that pos is in the map
-          if self.map[x][y] == 1 then -- If that pos is a wall
-            edge.vec = {v[1],v[2]} -- Define the edges vector as the neighbor direction
-            table.insert(edge, {x=x,y=y}) -- insert the position
-            break
-          end
+        if self.map[x] and self.map[x][y] == 1 then -- If that pos is a wall
+          edge.vec = {v[1],v[2]} -- Define the edges vector as the neighbor direction
+          table.insert(edge, {x=x,y=y}) -- insert the position
+          break
         end
       end
     end
@@ -145,12 +179,10 @@ function Map:find_edges()
       local x = edge[#edge].x + edge.vec[1]
       local y = edge[#edge].y + edge.vec[2]
 
-      if self:posIsInArea(x,y, 0,0, #self.map,#self.map[1]) then
-        if self.map[x][y] == 1 then
-          table.insert(edge, {x=x,y=y})
-        end
+      if self.map[x] and self.map[x][y] == 1 then
+        table.insert(edge, {x=x,y=y})
       end
-    until self.map[x][y] ~= 1
+    until (not self.map[x]) or (self.map[x][y] ~= 1)
 
     if -- if you reach the starting position you've done a full loop
       edge[#edge].x == startPos.x and
@@ -160,7 +192,6 @@ function Map:find_edges()
     end
 
     table.insert(edges, {edge[#edge]})
-
   end
 
 
@@ -168,7 +199,7 @@ function Map:find_edges()
 end
 
 function Map:find_merge_point_between_maps(map_1, map_2)
-  local edges_1 = map_1:find_edges()
+  --local edges_1 = map_1:find_edges()
   -- Get a list of room edges
   -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
   -- check for collisions?
@@ -176,83 +207,6 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   -- if you run out of rotations make a new map
 end
 
-local function getMatches(lines1, lines2)
-  local matches = {}
-  for i, v in ipairs(lines1) do
-    for i2, v2 in ipairs(lines2) do
-      if #v == #v2 and v.vec[1] == v2.vec[1] and v.vec[2] == v2.vec[2] then
-        if #v > 2 and #v2 > 2 then
-          table.insert(matches, {v, v2})
-        end
-      end
-    end
-  end
 
-  return matches
-end
-
-local function getLines(map)
-
-  -- iterate until you find a wall
-  local startPos
-  for x = 0, #map do
-    for y = 0, #map[x] do
-      if map[x][y] == 1 then
-        startPos = {x=x,y=y}
-      end
-    end
-  end
-
-  local lines = {{startPos}}
-  local neighbors = {
-    {-1,1},{0,1},{1,1},
-    {-1,0},      {1,0},
-    {-1,-1},{0,-1},{1,-1}
-  }
-
-  while true do
-    local line = lines[#lines] -- Current line is the last element
-    local start = line[1] -- Starting position is the first element
-    for i, v in ipairs(neighbors) do
-      if #lines == 1 or -- If there's only one line
-        not (v[1] == lines[#lines-1].vec[1] * -1 and v[2] == lines[#lines-1].vec[2] * -1) --?
-      then
-
-        local x, y = start.x+v[1], start.y+v[2] -- Check from the starting point + a neighbor
-        if self:posIsInArea(x,y, 0,0, #map,#map[1]) then -- If that pos is in the map
-          if map[x][y] == 1 then -- If that pos is a wall
-            line.vec = {v[1],v[2]} -- Define the lines vector as the neighbor direction
-            table.insert(line, {x=x,y=y}) -- insert the position
-            break
-          end
-        end
-      end
-    end
-
-    repeat -- keep going until you run out of map or reach an empty space
-      local x = line[#line].x + line.vec[1]
-      local y = line[#line].y + line.vec[2]
-
-      if self:posIsInArea(x,y, 0,0, #map,#map[1]) then
-        if map[x][y] == 1 then
-          table.insert(line, {x=x,y=y})
-        end
-      end
-    until map[x][y] ~= 1
-
-    if -- if you reach the starting position you've done a full loop
-      line[#line].x == startPos.x and
-      line[#line].y == startPos.y
-    then
-      break
-    end
-
-    table.insert(lines, {line[#line]})
-
-  end
-
-
-  return lines
-end
 
 return Level
