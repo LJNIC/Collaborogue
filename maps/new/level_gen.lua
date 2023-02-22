@@ -11,7 +11,7 @@ local function getMatches(lines1, lines2)
   local matches = {}
   for i, v in ipairs(lines1) do
     for i2, v2 in ipairs(lines2) do
-      if (#v == #v2) and ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then
+      if ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then
         if (#v > 2) and (#v2 > 2) then
           table.insert(matches, {v, v2})
         end
@@ -25,12 +25,12 @@ end
 function Level:create()
   local map = Map:new(100, 100, 0)
 
-  local room_1 = Map:new(6, 6, 1)
+  local room_1 = Map:new(6, 11, 1)
   room_1
   :clearArea(2,2, room_1.width-2, room_1.height-2)
   local room_1_outline = room_1:new_from_outline()
 
-  local room_2 = Map:new(6, 6, 1)
+  local room_2 = Map:new(6, 8, 1)
   room_2
   :clearArea(2,2, room_2.width-2, room_2.height-2)
   local room_2_outline = room_2:new_from_outline()
