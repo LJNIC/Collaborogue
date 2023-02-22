@@ -11,7 +11,7 @@ local function getMatches(lines1, lines2)
   local matches = {}
   for i, v in ipairs(lines1) do
     for i2, v2 in ipairs(lines2) do
-      if (#v == #v2) and (v.vec[1] == v2.vec[1] and v.vec[2] == v2.vec[2]) then
+      if (#v == #v2) and ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then
         if (#v > 2) and (#v2 > 2) then
           table.insert(matches, {v, v2})
         end
@@ -25,6 +25,7 @@ end
 function Level:create()
   local map = Map:new(100, 100, 0)
 
+  --[[
   local room_1 = Map:new(6, 6, 1)
   room_1
   :clearArea(1,1, room_1.width-1, room_1.height-1)
@@ -36,25 +37,64 @@ function Level:create()
   --:clearPoint(0,math.floor(room_2.height/2))
 
   local room_3 = Map:merge_maps(room_1, room_2)
+  --]]
   
   -- -------------------------------------------------------------------------- --
 
   local room_1 = Map:new(6, 6, 1)
   room_1
   :clearArea(2,2, room_1.width-2, room_1.height-2)
-  
   local room_1_outline = room_1:new_from_outline()
-  local edges_1 = room_1_outline:find_edges()
 
   local room_2 = Map:new(6, 6, 1)
   room_2
   :clearArea(2,2, room_2.width-2, room_2.height-2)
-  
   local room_2_outline = room_2:new_from_outline()
-  local edges_2 = room_2_outline:find_edges()
+
+  local room_3 = Map:merge_maps(room_1_outline, room_2_outline)
+
+
+  -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
+  --:clearPoint(0,math.floor(room_1.height/2))
+
+  -- -------------------------------------------------------------------------- --
+
+
+  map:copy_map_onto_self_at_position(room_3, 0, 0)
+
+
+
+  return map
+end
+
+function Map:copy_map_onto_self_at_position(map, x, y, is_destructive)
+  for i = x, x+map.width do
+    for i2 = y, y+map.height do
+      if (is_destructive) or (self.map[i][i2] ~= 1) then
+        self.map[i][i2] = map.map[i-x][i2-y]
+      end
+    end
+  end
+
+  return self
+end
+
+function Map:find_merge_point_between_maps(map_1, map_2)
+
+
+  local edges_1 = map_1:find_edges()
+  local edges_2 = map_2:find_edges()
 
   local matches = getMatches(edges_1, edges_2)
   print(#matches)
+
+  --same size
+  --same shape
+  --do matches work right?
+
+  local merge_point_x, merge_point_y = matches[1][1][2].x, matches[1][1][2].y
+  local offset_x, offset_y = (matches[1][1][2].y - matches[1][2][2].y)/2+2, (matches[1][1][2].x - matches[1][2][2].x)/2+2
+  print(offset_x, offset_y)
 
 
   --[[ Stuff I don't need
@@ -64,44 +104,28 @@ function Level:create()
     end
   end
   --]]
-  -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
-  --:clearPoint(0,math.floor(room_1.height/2))
 
-  -- -------------------------------------------------------------------------- --
+  -- Get a list of room edges
+  -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
+  -- check for collisions?
+  -- if you run out of matches rotate a room
+  -- if you run out of rotations make a new map
 
-
-  map:copy_map_onto_self_at_position(room_1_outline, 1, 1)
-  map:copy_map_onto_self_at_position(room_2_outline, 8, 1)
-
-
-
-  return map
-end
-
-function Map:copy_map_onto_self_at_position(map, x, y)
-  for i = x, x+map.width do
-    for i2 = y, y+map.height do
-      self.map[i][i2] = map.map[i-x][i2-y]
-    end
-  end
-
-  return self
+  return merge_point_x, merge_point_y, offset_x, offset_y
 end
 
 function Map:merge_maps(map_1, map_2)
-  Map:find_merge_point_between_maps(map_1, map_2)
+  local merge_point_x, merge_point_y, offset_x, offset_y = Map:find_merge_point_between_maps(map_1, map_2)
 
   local map_1_max_length = math.max(map_1.width, map_1.height)
   local map_2_max_length = math.max(map_2.width, map_2.height)
   local map_length = map_1_max_length + map_2_max_length
   local map = Map:new(map_length, map_length, 0)
 
-  local merge_point_x, merge_point_y = map_1.width, map_1.height/2
-  local offset_x, offset_y = 0, map_1.height/2
   local position_x, position_y = merge_point_x-offset_x, merge_point_y-offset_y
 
-  map:copy_map_onto_self_at_position(map_1, 0, 0)
-  map:copy_map_onto_self_at_position(map_2, position_x, position_y)
+  map:copy_map_onto_self_at_position(map_1, 0, 0, false)
+  map:copy_map_onto_self_at_position(map_2, position_x, position_y, false)
   :clearPoint(merge_point_x, merge_point_y)
 
   return map
@@ -113,7 +137,7 @@ function Map:new_from_outline()
   local padding = 1
   local outline_map = Map
   :new(self.width+padding*2, self.height+padding*2, 1)
-  :copy_map_onto_self_at_position(self, padding, padding)
+  :copy_map_onto_self_at_position(self, padding, padding, true)
   
   for x = 0, outline_map.width do
     for y = 0, outline_map.height do
@@ -198,14 +222,7 @@ function Map:find_edges()
   return edges
 end
 
-function Map:find_merge_point_between_maps(map_1, map_2)
-  --local edges_1 = map_1:find_edges()
-  -- Get a list of room edges
-  -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
-  -- check for collisions?
-  -- if you run out of matches rotate a room
-  -- if you run out of rotations make a new map
-end
+
 
 
 
