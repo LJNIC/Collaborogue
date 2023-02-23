@@ -103,13 +103,18 @@ function Map:merge_maps(map_1, map_2)
   map:copy_map_onto_self_at_position(map_2, x2+offset_x, y2+offset_y, false)
   :clearPoint(x1+offset_x, y1+offset_y)
 
+  local left, right, top, bottom = map:get_padding()
+  print(map:get_padding())
+  
+  local map = map:new_from_trim_edges(left-1, right-1, top-1, bottom-1)
   -- there needs to be an overlap check here
 
   return map
 end
 
-function Map:getPadding()
-  local padding_x, padding_y = 0, 0
+function Map:get_padding()
+  local padding_left, padding_right = 0, 0
+  local padding_top, padding_bottom = 0, 0
 
   for x = 0, self.width do
     local binary = false
@@ -122,7 +127,21 @@ function Map:getPadding()
     if binary == true then
       break
     end
-    padding_x = padding_x + 1
+    padding_left = padding_left + 1
+  end
+
+  for x = self.width, 0, -1 do
+    local binary = false
+    for y = 0, self.height do
+      if self.map[x][y] == 1 then
+        binary = true
+        break
+      end
+    end
+    if binary == true then
+      break
+    end
+    padding_right = padding_right + 1
   end
 
   for y = 0, self.height do
@@ -136,10 +155,37 @@ function Map:getPadding()
     if binary == true then
       break
     end
-    padding_y = padding_y + 1
+    padding_top = padding_top + 1
   end
 
-  return padding_x, padding_y
+  for y = self.height, 0, -1 do
+    local binary = false
+    for x = 0, self.width do
+      if self.map[x][y] == 1 then
+        binary = true
+        break
+      end
+    end
+    if binary == true then
+      break
+    end
+    padding_bottom = padding_bottom + 1
+  end
+
+  return padding_left, padding_right, padding_top, padding_bottom
+end
+
+function Map:new_from_trim_edges(left, right, top, bottom)
+  local map = Map:new(self.width-(left+right), self.height-(top+bottom), 0)
+  print(map.width, map.height)
+
+  for x = left, self.width-right do
+    for y = top, self.height-bottom do
+      map.map[x-left][y-top] = self.map[x][y]
+    end
+  end
+
+  return map
 end
 
 function Map:new_from_outline()
