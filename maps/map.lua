@@ -65,35 +65,43 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   --same size
   --same shape
 
-  --[[
-  local merge_point_x, merge_point_y = matches[1][1][2].x, matches[1][1][2].y
-  local padding_x, padding_y = map_1:getPadding()
-  local offset_x, offset_y = (matches[1][1][2].y - matches[1][2][2].y)/2+padding_x, (matches[1][1][2].x - matches[1][2][2].x)/2+padding_y
-  --]]
-
   -- Get a list of room edges
   -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
   -- check for collisions?
   -- if you run out of matches rotate a room
   -- if you run out of rotations make a new map
 
-  local x1, y1 = matches[1][1][2].x, matches[1][1][2].y
-  local x2, y2 = (matches[1][1][2].x - matches[1][2][2].x), (matches[1][1][2].y - matches[1][2][2].y)
+  --print(#matches)
+  local match_index = math.random(1, #matches)
+  local match = matches[match_index]
+
+  --print(matches[2])
+
+  local x1, y1 = match[1][2].x, match[1][2].y
+  local x2, y2 = (match[1][2].x - match[2][2].x), (match[1][2].y - match[2][2].y)
 
   return x1, y1, x2, y2
 end
 
 function Map:merge_maps(map_1, map_2)
-  local x1, y1, x2, y2 = Map:find_merge_point_between_maps(map_1, map_2)
+  -- Only works for convex
+  -- Requires additional tunneling to make a path
+
+  local map_1_strict = map_1:new_from_outline_strict()
+  local map_2_strict = map_2:new_from_outline_strict()
+
+  local x1, y1, x2, y2 = Map:find_merge_point_between_maps(map_1_strict, map_2_strict)
 
   local map_1_max_length = math.max(map_1.width, map_1.height)
   local map_2_max_length = math.max(map_2.width, map_2.height)
   local map_length = map_1_max_length + map_2_max_length
-  local map = Map:new(map_length, map_length, 0)
+  local map = Map:new(map_length*2, map_length*2, 0)
 
-  map:copy_map_onto_self_at_position(map_1, 0, 0, false)
-  map:copy_map_onto_self_at_position(map_2, x2, y2, false)
-  :clearPoint(x1, y1)
+  local offset_x, offset_y = map_2.width, map_2.height
+
+  map:copy_map_onto_self_at_position(map_1, offset_x, offset_y, false)
+  map:copy_map_onto_self_at_position(map_2, x2+offset_x, y2+offset_y, false)
+  :clearPoint(x1+offset_x, y1+offset_y)
 
   -- there needs to be an overlap check here
 
@@ -136,8 +144,7 @@ end
 
 function Map:new_from_outline()
   local padding = 1
-  local outline_map = Map
-  :new(self.width+padding*2, self.height+padding*2, 1)
+  local outline_map = Map:new(self.width+padding*2, self.height+padding*2, 1)
   :copy_map_onto_self_at_position(self, padding, padding, true)
   
   for x = 0, outline_map.width do
@@ -163,6 +170,44 @@ function Map:new_from_outline()
         outline_map.map[x][y] = 0
       end
     end
+  end
+
+  return outline_map
+end
+
+function Map:new_from_outline_strict()
+  local outline_map = Map:new(self.width, self.height, 0)
+
+  local to_check = {{0,0}}
+  local checked = {}
+  while true do
+
+    local current_tile = table.remove(to_check)
+    local x, y = current_tile[1], current_tile[2]
+    
+    for k, v in pairs(Map:getNeighborhood('vonNeuman')) do
+      local x, y = x+v[1], y+v[2]
+
+      if self.map[x] then
+
+        if not checked[tostring(x)..','..tostring(y)] then
+          if self.map[x][y] == 0 then
+            table.insert(to_check, {x, y})
+          elseif self.map[x][y] == 1 then
+            outline_map.map[x][y] = 1
+          end
+        end
+
+
+      end
+    end
+
+    checked[tostring(x)..','..tostring(y)] = true
+
+
+    if #to_check == 0 then
+      break
+    end 
   end
 
   return outline_map
@@ -708,7 +753,7 @@ function Map:automata2()
   end
 end
 
-function Map:DLAInOut(map)
+function Map:DLAInOut()
   local function clamp(n, min, max)
     local n = math.max(math.min(n, max), min)
     return n
@@ -720,9 +765,9 @@ function Map:DLAInOut(map)
     local x2,y2 = nil,nil
 
     repeat
-      x1 = math.random(3, map.width - 3)
-      y1 = math.random(3, map.height - 3)
-    until map[x1][y1] == 0
+      x1 = math.random(3, self.width - 3)
+      y1 = math.random(3, self.height - 3)
+    until self.map[x1][y1] == 0
 
 
     local n = 0
@@ -731,7 +776,7 @@ function Map:DLAInOut(map)
       x2 = x1 + neighbors[vec][1]
       y2 = y1 + neighbors[vec][2]
 
-      if map[x2][y2] == 1 then
+      if self.map[x2][y2] == 1 then
         break
       else
         n = n + 1
@@ -740,7 +785,7 @@ function Map:DLAInOut(map)
     end
 
     if n ~= 4 then
-      map[x2][y2] = 0
+      self.map[x2][y2] = 0
       break
     end
   end
