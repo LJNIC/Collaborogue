@@ -10,20 +10,6 @@ function Level:create()
   local map = Map:new(1000, 1000, 0)
 
   --[[
-  local room_1 = Map:new(6, 11, 1)
-  room_1
-  :clearArea(2,2, room_1.width-2, room_1.height-2)
-  local room_1_outline = room_1:new_from_outline()
-
-  local room_2 = Map:new(6, 9, 1)
-  room_2
-  :clearArea(2,2, room_2.width-2, room_2.height-2)
-  local room_2_outline = room_2:new_from_outline()
-
-  local room_3 = Map:merge_maps(room_1_outline, room_2_outline)--:new_from_outline_strict()
-  --]]
-
-  --[[
   local function clearing()
     local room = Map:new(20, 20, 1)
 
@@ -50,7 +36,7 @@ function Level:create()
   --]]
 
   local merged_room
-  for i = 1, 5 do
+  for i = 1, 20 do
     local room = Map:new(math.random(5, 10), math.random(5, 10), 1)
     room:clearArea(2,2, room.width-1, room.height-1)
     local room_outline = room:new_from_outline()

@@ -45,7 +45,7 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     local matches = {}
     for i, v in ipairs(lines1) do
       for i2, v2 in ipairs(lines2) do
-        if ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then
+        if ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then -- if shape winding was consistent this might help
           if (#v > 2) and (#v2 > 2) then
             table.insert(matches, {v, v2})
           end
@@ -56,13 +56,72 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     return matches
   end
 
+  local function segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4)
+    local dx1, dy1 = x2 - x1, y2 - y1
+    local dx2, dy2 = x4 - x3, y4 - y3
+    local dx3, dy3 = x1 - x3, y1 - y3
+    local d = dx1*dy2 - dy1*dx2
+    if d == 0 then
+        return false
+    end
+    local t1 = (dx2*dy3 - dy2*dx3)/d
+    if t1 < 0 or t1 > 1 then
+        return false
+    end
+    local t2 = (dx1*dy3 - dy1*dx3)/d
+    if t2 < 0 or t2 > 1 then
+        return false
+    end
+    -- point of intersection
+    return true, x1 + t1*dx1, y1 + t1*dy1
+  end
+
   local edges_1 = map_1:find_edges()
   local edges_2 = map_2:find_edges()
 
-  local matches = getMatches(edges_1, edges_2)
+  -- Offset all edges of a shape by a ...
+  -- Check if all the edges of a shape do not collide with all the edges of the other shape
+  -- If they don't then that offset works and you've found a match
 
-  --odd
-  --same size
+  local matches = getMatches(edges_1, edges_2)
+  local matches_without_intersections = {}
+
+  for i, v in ipairs(matches) do
+    local is_intersects = false
+    local x1, y1 = v[1][2].x, v[1][2].y
+    local x2, y2 = (v[1][2].x - v[2][2].x), (v[1][2].y - v[2][2].y)
+
+    for i, edge_1 in ipairs(edges_1) do
+      for i2, edge_2 in ipairs(edges_2) do
+        if (edge_1[1].x ~= edge_2[1].x+x2) and (edge_1[1].y ~= edge_2[1].y+y2)
+        and (edge_1[#edge_1].x ~= edge_2[#edge_2].x+x2) and (edge_1[#edge_1].y ~= edge_2[#edge_2].y+y2) then
+          if segmentVsSegment(
+            edge_1[1].x, edge_1[1].y, edge_1[#edge_1].x, edge_1[#edge_1].y,
+            edge_2[1].x+x2, edge_2[1].y+y2, edge_2[#edge_2].x+x2, edge_2[#edge_2].y+y2
+          )
+          then
+            is_intersects = true
+            break
+          end
+        end
+
+      end
+
+      if is_intersects then
+        break
+      end
+    end
+
+    if not is_intersects then
+      table.insert(matches_without_intersections, v)
+    end
+
+  end
+
+  --print(#matches, #matches_without_intersections)
+
+  -- this doesn't preserve doorways
+
   --same shape
 
   -- Get a list of room edges
@@ -71,11 +130,10 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   -- if you run out of matches rotate a room
   -- if you run out of rotations make a new map
 
-  --print(#matches)
+  local matches = matches_without_intersections
+
   local match_index = math.random(1, #matches)
   local match = matches[match_index]
-
-  --print(matches[2])
 
   local x1, y1 = match[1][2].x, match[1][2].y
   local x2, y2 = (match[1][2].x - match[2][2].x), (match[1][2].y - match[2][2].y)
@@ -104,7 +162,6 @@ function Map:merge_maps(map_1, map_2)
   :clearPoint(x1+offset_x, y1+offset_y)
 
   local left, right, top, bottom = map:get_padding()
-  print(map:get_padding())
   
   local map = map:new_from_trim_edges(left-1, right-1, top-1, bottom-1)
   -- there needs to be an overlap check here
@@ -177,7 +234,6 @@ end
 
 function Map:new_from_trim_edges(left, right, top, bottom)
   local map = Map:new(self.width-(left+right), self.height-(top+bottom), 0)
-  print(map.width, map.height)
 
   for x = left, self.width-right do
     for y = top, self.height-bottom do
@@ -270,14 +326,16 @@ function Map:find_edges()
     end
   end
 
-  
-
   local edges = {{startPos}}
+
+  local moore = Map:getNeighborhood('moore')
+  --local winding = {moore.e, moore.s, moore.n, moore.w}
+  local winding = {moore.e, moore.se, moore.s, moore.sw, moore.w, moore.nw, moore.n, moore.ne}
 
   while true do
     local edge = edges[#edges] -- Current edge is the last element
     local start = edge[1] -- Starting position is the first element
-    for k, v in pairs(Map:getNeighborhood('moore')) do
+    for i, v in ipairs(winding) do
       if #edges == 1 or -- If there's only one edge
         not ( (v[1] == edges[#edges-1].vec[1] * -1) and (v[2] == edges[#edges-1].vec[2] * -1)) -- if not the direction we came from
       then
