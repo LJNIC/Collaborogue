@@ -29,7 +29,7 @@ end
 function Map:copy_map_onto_self_at_position(map, x, y, is_destructive)
   for i = x, x+map.width do
     for i2 = y, y+map.height do
-      if (is_destructive) or (self.map[i][i2] ~= 1) then
+      if (is_destructive) or (self.map[i][i2] == 0) then
         self.map[i][i2] = map.map[i-x][i2-y]
       end
     end
@@ -130,7 +130,9 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   -- if you run out of matches rotate a room
   -- if you run out of rotations make a new map
 
-  local matches = matches_without_intersections
+  --local matches = matches_without_intersections
+
+  assert(#matches > 0, "no matches found")
 
   local match_index = math.random(1, #matches)
   local match = matches[match_index]
@@ -159,7 +161,8 @@ function Map:merge_maps(map_1, map_2)
 
   map:copy_map_onto_self_at_position(map_1, offset_x, offset_y, false)
   map:copy_map_onto_self_at_position(map_2, x2+offset_x, y2+offset_y, false)
-  :clearPoint(x1+offset_x, y1+offset_y)
+  :set_point(x1+offset_x, y1+offset_y, 'Door')
+  --:clearPoint(x1+offset_x, y1+offset_y)
 
   local left, right, top, bottom = map:get_padding()
   
@@ -395,6 +398,11 @@ function Map:clearPoint(x,y)
 end
 function Map:fillPoint(x,y)
   self.map[x][y] = 1
+
+  return self
+end
+function Map:set_point(x, y, id)
+  self.map[x][y] = id
 
   return self
 end

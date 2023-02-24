@@ -1,3 +1,4 @@
+--love.math.setRandomSeed(0)
 local Map = require "maps.map"
 local Object = require "object"
 
@@ -8,6 +9,27 @@ end
 
 function Level:create()
   local map = Map:new(1000, 1000, 0)
+
+  local function clearing()
+    local room = Map:new(20, 20, 1)
+
+    for x = 8, 12 do
+      for y = 8, 12 do
+        local cx, cy = 10, 10
+        local rad = 2
+        local dx = (x - cx)^2
+        local dy = (y - cy)^2
+        if (dx + dy) <= rad^2 then
+          room.map[x][y] = 0
+        end
+      end
+    end
+
+    for i = 1, 100 do
+      room:DLAInOut()
+    end
+    return room
+  end
 
   --[[
   local function clearing()
@@ -36,9 +58,12 @@ function Level:create()
   --]]
 
   local merged_room
-  for i = 1, 20 do
-    local room = Map:new(math.random(5, 10), math.random(5, 10), 1)
+  for i = 1, 100 do
+    --
+    local room = Map:new(love.math.random(5, 5), love.math.random(5, 5), 1)
     room:clearArea(2,2, room.width-1, room.height-1)
+    --]]
+    --local room = clearing()
     local room_outline = room:new_from_outline()
 
     if merged_room == nil then

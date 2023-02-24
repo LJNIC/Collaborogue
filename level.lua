@@ -519,7 +519,7 @@ function Level:eachActor(...)
 end
 
 function Level:getCellPassable(x, y)
-  if not (self:getCell(x, y) == 0) then
+  if (self:getCell(x, y) == 1) then
     return false
   else
     local atPosition = {}
