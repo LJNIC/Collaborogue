@@ -61,6 +61,7 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     local dx2, dy2 = x4 - x3, y4 - y3
     local dx3, dy3 = x1 - x3, y1 - y3
     local d = dx1*dy2 - dy1*dx2
+
     if d == 0 then
         return false
     end
@@ -72,37 +73,78 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     if t2 < 0 or t2 > 1 then
         return false
     end
-    -- point of intersection
-    return true, x1 + t1*dx1, y1 + t1*dy1
+ 
+    --[[
+    if not ((x1 ~= x3) and (y1 ~= y3) and (x2 ~= x4) and (y2 ~= y4)) then -- if they have the same points
+      return false
+    end
+    if not ((x1 ~= x4) and (y1 ~= y4) and (x2 ~= x3) and (y2 ~= y3)) then -- if they have the same points
+      return false
+    end
+    --]]
+
+    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
+
+    return true, intersect_x, intersect_y
+  end
+
+  local function point_cast(x1, y1, x2, y2, x3, y3, x4, y4)
+    local dx1, dy1 = x2 - x1, y2 - y1
+    local dx2, dy2 = x4 - x3, y4 - y3
+    local dx3, dy3 = x1 - x3, y1 - y3
+    local d = dx1*dy2 - dy1*dx2
+
+    if d == 0 then
+        return false
+    end
+    local t1 = (dx2*dy3 - dy2*dx3)/d
+    if t1 < 0 or t1 > 1 then
+        return false
+    end
+    local t2 = (dx1*dy3 - dy1*dx3)/d
+    if t2 < 0 or t2 > 1 then
+        return false
+    end
+
+    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
+
+    if x1 == intersect_x and y1 == intersect_y then
+      return false
+    end
+    if x2 == intersect_x and y2 == intersect_y then
+      return false
+    end
+    if x3 == intersect_x and y3 == intersect_y then
+      return false
+    end
+    if x4 == intersect_x and y4 == intersect_y then
+      return false
+    end
+
+
+    return true, intersect_x, intersect_y
   end
 
   local edges_1 = map_1:find_edges()
   local edges_2 = map_2:find_edges()
 
-  -- Offset all edges of a shape by a ...
-  -- Check if all the edges of a shape do not collide with all the edges of the other shape
-  -- If they don't then that offset works and you've found a match
-
   local matches = getMatches(edges_1, edges_2)
   local matches_without_intersections = {}
 
-  for i, v in ipairs(matches) do
+  local function does_intersect(v, edges_1, edges_2, offset)
     local is_intersects = false
-    local x1, y1 = v[1][2].x, v[1][2].y
-    local x2, y2 = (v[1][2].x - v[2][2].x), (v[1][2].y - v[2][2].y)
 
-    for i, edge_1 in ipairs(edges_1) do
-      for i2, edge_2 in ipairs(edges_2) do
-        if (edge_1[1].x ~= edge_2[1].x+x2) and (edge_1[1].y ~= edge_2[1].y+y2)
-        and (edge_1[#edge_1].x ~= edge_2[#edge_2].x+x2) and (edge_1[#edge_1].y ~= edge_2[#edge_2].y+y2) then
-          if segmentVsSegment(
-            edge_1[1].x, edge_1[1].y, edge_1[#edge_1].x, edge_1[#edge_1].y,
-            edge_2[1].x+x2, edge_2[1].y+y2, edge_2[#edge_2].x+x2, edge_2[#edge_2].y+y2
-          )
-          then
-            is_intersects = true
-            break
-          end
+    for _, edge_1 in ipairs(edges_1) do
+      for _, edge_2 in ipairs(edges_2) do
+
+        local x1, y1 = edge_1[1].x, edge_1[1].y
+        local x2, y2 = edge_1[#edge_1].x, edge_1[#edge_1].y
+        local x3, y3 = edge_2[1].x+offset.x, edge_2[1].y+offset.y
+        local x4, y4 = edge_2[#edge_2].x+offset.x, edge_2[#edge_2].y+offset.y
+
+        if segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4) == true then
+          is_intersects = true
+          break
         end
 
       end
@@ -112,25 +154,59 @@ function Map:find_merge_point_between_maps(map_1, map_2)
       end
     end
 
-    if not is_intersects then
+
+  end
+
+  local function does_ray_intersect_with_polygon(point, polygon, map)
+    local is_intersect, intersect_x, intersect_y
+    
+    for i, segment in ipairs(polygon) do
+
+      local x1, y1 = point.x, point.y
+      local x2, y2 = point.x+map.width, point.y
+
+      local x3, y3 = segment[1].x, segment[1].y
+      local x4, y4 = segment[#segment].x, segment[#segment].y
+
+
+      is_intersect, intersect_x, intersect_y = point_cast(x1,y1, x2,y2, x3,y3, x4,y4)
+      if is_intersect then
+        break 
+      end
+    end
+
+    return is_intersect, intersect_x, intersect_y
+  end
+
+  local function does_lie_inside(v, map, polygon_1, polygon_2, offset)
+    local point = {x = polygon_2[2][1].x+offset.x, y = polygon_2[2][1].y+offset.y } --random point from polygon_2
+    local num_of_intersections = 0
+    while true do
+      local is_intersect, intersect_x, intersect_y = does_ray_intersect_with_polygon(point, polygon_1, map)
+      if is_intersect == false then
+        break
+      else
+        num_of_intersections = num_of_intersections + 1
+        point = {x = intersect_x, y = intersect_y} -- use new intersection as basis
+      end
+    end
+
+    if num_of_intersections % 2 == 0 then
+      return false
+    else
+      return true
+    end
+  end
+
+  for i, v in ipairs(matches) do
+    local offset = {x = v[1][2].x - v[2][2].x, y = v[1][2].y - v[2][2].y}
+    if (not does_intersect(v, edges_1, edges_2, offset)) and (not does_lie_inside(v, map_1, edges_1, edges_2, offset)) then
       table.insert(matches_without_intersections, v)
     end
 
   end
 
-  --print(#matches, #matches_without_intersections)
-
-  -- this doesn't preserve doorways
-
-  --same shape
-
-  -- Get a list of room edges
-  -- compare two rooms for any matching "jigsaws": two edges with opposite velocities
-  -- check for collisions?
-  -- if you run out of matches rotate a room
-  -- if you run out of rotations make a new map
-
-  --local matches = matches_without_intersections
+  local matches = matches_without_intersections
 
   assert(#matches > 0, "no matches found")
 
