@@ -1,5 +1,11 @@
 local Object = require "object"
 
+local lib_path = love.filesystem.getWorkingDirectory() .. '/maps/clipper'
+print(lib_path)
+local extension = jit.os == 'Windows' and 'dll' or jit.os == 'Linux' and 'so' or jit.os == 'OSX' and 'dylib'
+package.cpath = string.format('%s;%s/?.%s', package.cpath, lib_path, extension)
+local clipper = require('maps/clipper/clipper')
+
 local Map = Object:extend()
 
 function Map:new(width, height, value)
