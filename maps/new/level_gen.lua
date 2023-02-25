@@ -32,7 +32,7 @@ function Level:create()
   end
 
   local merged_room
-  for i = 1, 10 do
+  for i = 1, 20 do
 
     local room = Map:new(love.math.random(5, 10), love.math.random(5, 10), 1)
     room:clearArea(2,2, room.width-1, room.height-1)

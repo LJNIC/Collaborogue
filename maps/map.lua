@@ -4,8 +4,40 @@ local lib_path = love.filesystem.getWorkingDirectory() .. '/maps/clipper'
 print(lib_path)
 local extension = jit.os == 'Windows' and 'dll' or jit.os == 'Linux' and 'so' or jit.os == 'OSX' and 'dylib'
 package.cpath = string.format('%s;%s/?.%s', package.cpath, lib_path, extension)
-local clipper = require('maps/clipper/clipper')
+local Clipper = require('maps/clipper/clipper')
 
+--[[
+local subject, clip, solution
+subject = Clipper.Path(4)
+subject[0] = Clipper.IntPoint(0,0)
+subject[1] = Clipper.IntPoint(0,1)
+subject[2] = Clipper.IntPoint(1,0)
+
+
+clip = Clipper.Path(4)
+clip[0] = Clipper.IntPoint(0+100,0+100)
+clip[1] = Clipper.IntPoint(0+100,1+100)
+clip[2] = Clipper.IntPoint(1+100,0+100)
+
+
+
+--print(Clipper.Area(clip))
+solution = Clipper.Paths(1)
+print(Clipper.Area(solution[0]))
+
+
+local clipper = Clipper.Clipper()
+clipper:AddPath(subject, Clipper.ptSubject, true)
+clipper:AddPath(clip, Clipper.ptClip, true)
+clipper:Execute(Clipper.ctIntersection, solution)
+
+print(Clipper.Area(solution[0]))
+
+
+--]]
+
+
+ 
 local Map = Object:extend()
 
 function Map:new(width, height, value)
@@ -270,39 +302,28 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   local function does_intersect(v, edges_1, edges_2, offset)
     local is_intersects = false
 
-    for _, edge_1 in ipairs(edges_1) do
-      for _, edge_2 in ipairs(edges_2) do
+    local subject = edges_1
 
-        local p1 = {x = edge_1[1].x, y = edge_1[1].y}
-        local q1 = {x = edge_1[#edge_1].x, y = edge_1[#edge_1].y}
-        local p2 = {x = edge_2[1].x+offset.x, y = edge_2[1].y+offset.y}
-        local q2 = {x = edge_2[#edge_2].x+offset.x, y = edge_2[#edge_2].y+offset.y}
-
-        --if segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4) == true then
-        if (
-          --true
-          #edge_1 > 2 and #edge_2 > 2
-          --(p1.x ~= p2.x and p1.y ~= p2.y) and (q1.x ~= q2.x and q1.y ~= q2.y)
-          --(p1.x ~= q2.x and p1.y ~= q2.y) and
-          --(q1.x ~= p2.x and q1.y ~= p2.y) --and
-          --(q1.x ~= q2.x and q1.y ~= q2.y)
-        )
-        then
-        if segment_intersection(p1, q1, p2, q2) then
-          is_intersects = true
-          break
-        end
-      end
-
-      end
-
-      if is_intersects then
-        break
+    --
+    local clip = Clipper.Path(1000)
+    local i = 0
+    for _, v in ipairs(edges_2) do
+      for _, v2 in ipairs(v) do
+        clip[i] = Clipper.IntPoint(v2.x+offset.x, v2.y+offset.y)
+        i = i + 1
       end
     end
 
+    local solution = Clipper.Paths(1)
 
-    return is_intersects
+    local clipper = Clipper.Clipper()
+    clipper:AddPath(subject, Clipper.ptSubject, true)
+    clipper:AddPath(clip, Clipper.ptClip, true)
+    clipper:Execute(Clipper.ctDifference, solution)
+
+    --print(Clipper.Area(solution[0]) == Clipper.Area(subject))
+
+    return (Clipper.Area(solution[0]) ~= Clipper.Area(subject))
   end
 
   local function does_ray_intersect_with_polygon(point, polygon, map)
@@ -346,14 +367,20 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     end
   end
 
+  local subject = Clipper.Path(1000)
+  local i = 0
+  for _, v in ipairs(edges_1) do
+    for _, v2 in ipairs(v) do
+      subject[i] = Clipper.IntPoint(v2.x, v2.y)
+      i = i + 1
+    end
+  end
   for i, v in ipairs(matches) do
     local offset = {x = v[1][2].x - v[2][2].x, y = v[1][2].y - v[2][2].y}
-    if (not does_intersect(v, edges_1, edges_2, offset)) then
-      --if (not does_lie_inside(v, map_1, edges_1, edges_2, offset)) then
-       table.insert(matches_without_intersections, v)
-      --end
+    if (not does_intersect(v, subject, edges_2, offset)) then
+      table.insert(matches_without_intersections, v)
+      --break
     end
-
   end
 
   local matches = matches_without_intersections
