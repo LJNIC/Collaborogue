@@ -41,11 +41,48 @@ end
 function Map:find_merge_point_between_maps(map_1, map_2)
 
   local function getMatches(lines1, lines2)
+
+    local function sort_by_closest_to_origin(p, q)
+      if p.x < q.x then
+        return p, q
+      elseif p.x == q.x then
+        if p.y < q.y then
+          return p, q
+        elseif p.y == q.y then
+          assert()
+        else
+          return q, p
+        end
+      else
+        return q, p
+      end
+    end
+    local function orientation(p, q, r)
+      local val = (
+        (q.y - p.y) * (r.x - q.x) -
+        (q.x - p.x) * (r.y - q.y)
+      )
+
+      if (val == 0) then return 0 end
+
+      return (val > 0) and 1 or 2
+    end
+    function sign(n) return n>0 and 1 or n<0 and -1 or 0 end
+
     -- This is strict for testing purposes
     local matches = {}
     for i, v in ipairs(lines1) do
+      local p1, q1 = v[1], v[#v]
+      --local p1, q1 = sort_by_closest_to_origin(v[1], v[#v])
+
       for i2, v2 in ipairs(lines2) do
-        if ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then -- if shape winding was consistent this might help
+        local p2, q2 = v2[1], v2[#v2]
+
+        local dx1, dy1 = p1.x-q1.x, p1.y-q1.y
+        local dx2, dy2 = p2.x-q2.x, p2.y-q2.y
+
+        --if ( (v.vec[1] == v2.vec[1]*-1) and (v.vec[2] == v2.vec[2]*-1 )) then
+        if (sign(dx1) == sign(dx2) * -1) and (sign(dy1) == sign(dy2)*-1) then
           if (#v > 2) and (#v2 > 2) then
             table.insert(matches, {v, v2})
           end
@@ -73,8 +110,10 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     if t2 < 0 or t2 > 1 then
         return false
     end
+
+    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
  
-    --[[
+    --
     if not ((x1 ~= x3) and (y1 ~= y3) and (x2 ~= x4) and (y2 ~= y4)) then -- if they have the same points
       return false
     end
@@ -83,9 +122,100 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     end
     --]]
 
-    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
+
 
     return true, intersect_x, intersect_y
+  end
+
+  local function segment_intersection(p1, q1, p2, q2)
+
+    local function sort_by_closest_to_origin(p, q)
+      if p.x < q.x then
+        return p, q
+      elseif p.x == q.x then
+        if p.y < q.y then
+          return p, q
+        elseif p.y == q.y then
+          assert()
+        else
+          return q, p
+        end
+      else
+        return q, p
+      end
+    end
+
+    local p1, q1 = sort_by_closest_to_origin(p1, q1)
+    local p2, q2 = sort_by_closest_to_origin(p2, q2)
+
+    --[[
+    function sign(n) return n>0 and 1 or n<0 and -1 or 0 end
+    local dx1, dy1 = p1.x-q1.x, p1.y-q1.y
+    local dx2, dy2 = p2.x-q2.x, p2.y-q2.y
+    
+    dx1, dy1 = math.abs(sign(dx1)), math.abs(sign(dy1))
+    dx2, dy2 = math.abs(sign(dx2)), math.abs(sign(dy2))
+    
+    p1 = {x = p1.x - dx1, y = p1.y - dy1}
+    q1 = {x = q1.x + dx1, y = q1.y + dy1}
+    p2 = {x = p2.x - dx2, y = p2.y - dy2}
+    q2 = {x = q2.x + dx2, y = q2.y + dy2}
+    --]]
+
+    local function on_segment(p, q, r)
+      if (
+        q.x <= math.max(p.x, r.x) and q.x >= math.min(p.x, r.x) and
+        q.y <= math.max(p.y, r.y) and q.y >= math.min(p.y, r.y)
+      )
+      then
+        return true
+      else
+        return false
+      end
+    end
+
+    local function orientation(p, q, r)
+      local val = (
+        (q.y - p.y) * (r.x - q.x) -
+        (q.x - p.x) * (r.y - q.y)
+      )
+
+      if (val == 0) then return 0 end
+
+      return (val > 0) and 1 or 2
+    end
+
+    local o1 = orientation(p1, q1, p2)
+    local o2 = orientation(p1, q1, q2)
+    local o3 = orientation(p2, q2, p1)
+    local o4 = orientation(p2, q2, q1)
+
+
+    if (o1 ~= o2 and o3 ~= o4) then
+      --print('uuu')
+      --return true
+    end
+
+    if (o1 == 0 and on_segment(p1, p2, q1)) then 
+      --print('aaa')
+      --return true
+    end
+    if (o2 == 0 and on_segment(p1, q2, q1)) then 
+      --print('eee')
+      --return true
+    end
+    if (o3 == 0 and on_segment(p1, p2, q1)) then 
+      --print('ooo')
+      --return true
+    end
+    if (o4 == 0 and on_segment(p1, p2, q1)) then 
+      --print('iii')
+      --return true
+    end
+
+    --print('wow')
+
+    return false
   end
 
   local function point_cast(x1, y1, x2, y2, x3, y3, x4, y4)
@@ -137,15 +267,26 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     for _, edge_1 in ipairs(edges_1) do
       for _, edge_2 in ipairs(edges_2) do
 
-        local x1, y1 = edge_1[1].x, edge_1[1].y
-        local x2, y2 = edge_1[#edge_1].x, edge_1[#edge_1].y
-        local x3, y3 = edge_2[1].x+offset.x, edge_2[1].y+offset.y
-        local x4, y4 = edge_2[#edge_2].x+offset.x, edge_2[#edge_2].y+offset.y
+        local p1 = {x = edge_1[1].x, y = edge_1[1].y}
+        local q1 = {x = edge_1[#edge_1].x, y = edge_1[#edge_1].y}
+        local p2 = {x = edge_2[1].x+offset.x, y = edge_2[1].y+offset.y}
+        local q2 = {x = edge_2[#edge_2].x+offset.x, y = edge_2[#edge_2].y+offset.y}
 
-        if segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4) == true then
+        --if segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4) == true then
+        if (
+          --true
+          #edge_1 > 2 and #edge_2 > 2
+          --(p1.x ~= p2.x and p1.y ~= p2.y) and (q1.x ~= q2.x and q1.y ~= q2.y)
+          --(p1.x ~= q2.x and p1.y ~= q2.y) and
+          --(q1.x ~= p2.x and q1.y ~= p2.y) --and
+          --(q1.x ~= q2.x and q1.y ~= q2.y)
+        )
+        then
+        if segment_intersection(p1, q1, p2, q2) then
           is_intersects = true
           break
         end
+      end
 
       end
 
@@ -155,6 +296,7 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     end
 
 
+    return is_intersects
   end
 
   local function does_ray_intersect_with_polygon(point, polygon, map)
@@ -200,8 +342,10 @@ function Map:find_merge_point_between_maps(map_1, map_2)
 
   for i, v in ipairs(matches) do
     local offset = {x = v[1][2].x - v[2][2].x, y = v[1][2].y - v[2][2].y}
-    if (not does_intersect(v, edges_1, edges_2, offset)) and (not does_lie_inside(v, map_1, edges_1, edges_2, offset)) then
-      table.insert(matches_without_intersections, v)
+    if (not does_intersect(v, edges_1, edges_2, offset)) then
+      --if (not does_lie_inside(v, map_1, edges_1, edges_2, offset)) then
+       table.insert(matches_without_intersections, v)
+      --end
     end
 
   end
@@ -209,7 +353,6 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   local matches = matches_without_intersections
 
   assert(#matches > 0, "no matches found")
-
   local match_index = math.random(1, #matches)
   local match = matches[match_index]
 
@@ -220,8 +363,10 @@ function Map:find_merge_point_between_maps(map_1, map_2)
 end
 
 function Map:merge_maps(map_1, map_2)
-  -- Only works for convex
   -- Requires additional tunneling to make a path
+
+  --local map_1 = map_1:new_from_outline()
+  --local map_2 = map_2:new_from_outline()
 
   local map_1_strict = map_1:new_from_outline_strict()
   local map_2_strict = map_2:new_from_outline_strict()
@@ -953,14 +1098,14 @@ function Map:DLAInOut()
     local x2,y2 = nil,nil
 
     repeat
-      x1 = math.random(3, self.width - 3)
-      y1 = math.random(3, self.height - 3)
+      x1 = love.math.random(3, self.width - 3)
+      y1 = love.math.random(3, self.height - 3)
     until self.map[x1][y1] == 0
 
 
     local n = 0
     while n ~= 4 do
-      local vec = math.random(1, 4-n)
+      local vec = love.math.random(1, 4-n)
       x2 = x1 + neighbors[vec][1]
       y2 = y1 + neighbors[vec][2]
 

@@ -31,53 +31,42 @@ function Level:create()
     return room
   end
 
-  --[[
-  local function clearing()
-    local room = Map:new(20, 20, 1)
-
-    for x = 8, 12 do
-      for y = 8, 12 do
-        local cx, cy = 10, 10
-        local rad = 2
-        local dx = (x - cx)^2
-        local dy = (y - cy)^2
-        if (dx + dy) <= rad^2 then
-          room.map[x][y] = 0
-        end
-      end
-    end
-
-    for i = 1, 100 do
-      room:DLAInOut()
-    end
-    return room
-  end
-
-  local room_3 = clearing():new_from_outline()
-
-  --]]
-
   local merged_room
   for i = 1, 10 do
-    --
+
     local room = Map:new(love.math.random(5, 10), love.math.random(5, 10), 1)
     room:clearArea(2,2, room.width-1, room.height-1)
-    --]]
-    --local room = clearing()
-    local room_outline = room:new_from_outline()
+
+    local room = clearing()
+
+    local room = room:new_from_outline()
 
     if merged_room == nil then
-      merged_room = room_outline
+      merged_room = room
     else
-      merged_room = Map:merge_maps(merged_room, room_outline)
+      merged_room = Map:merge_maps(merged_room, room)
     end
 
   end
+  --[[
+ -- merged_room = merged_room:new_from_outline_strict()
+  --print('wow')
+  local room = Map:new(love.math.random(5, 10), love.math.random(5, 10), 1)
+  room:clearArea(2,2, room.width-1, room.height-1)
+  local room = room:new_from_outline()
+  merged_room = Map:merge_maps(merged_room, room)
+
+  --[[
+  local room = Map:new(love.math.random(5, 10), love.math.random(5, 10), 1)
+  room:clearArea(2,2, room.width-1, room.height-1)
+  local room = room:new_from_outline()
+  merged_room = Map:merge_maps(merged_room, room)
+  --]]
 
 
   -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
 
-  map:copy_map_onto_self_at_position(merged_room, 0, 0)
+  map:copy_map_onto_self_at_position(merged_room, 1, 1)
 
   return map
 end
