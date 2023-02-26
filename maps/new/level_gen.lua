@@ -103,12 +103,7 @@ function Level:create()
   local heat_map = Map:new(1000, 1000, 0)
   heat_map:copy_map_onto_self_at_position(map, 0, 0)
 
-  heat_map = heat_map:dijkstra({{x = 3, y= 3}}, 'moore')
-  print(heat_map.map[3][3])
-  print(heat_map.map[3][4])
-  print(heat_map.map[4][3])
-  print(heat_map.map[4][4])
-  print(heat_map.map[5][5])
+  heat_map = heat_map:dijkstra({{x = 2, y = 2}}, 'moore')
 
   return map, heat_map
 end

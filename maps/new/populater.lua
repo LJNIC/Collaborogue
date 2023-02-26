@@ -27,9 +27,9 @@ local function New(level)
         if v2 ~= 999 then
           local custom = {
             color = {
-              love.math.random(0,255)/255,
-              love.math.random(0,255)/255,
-              love.math.random(0,255)/255,
+              v2*15/255,
+              v2*15/255,
+              v2*15/255,
               1
             }
           }

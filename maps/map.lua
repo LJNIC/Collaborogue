@@ -680,7 +680,7 @@ function Map:dijkstra(start, neighborhood)
   local to_check = start
   local checked = {}
 
-  while true do
+  while true do 
     local current_tile = table.remove(to_check)
     local x, y = current_tile.x, current_tile.y
     local minimum_distance_value = map.map[x][y]
@@ -693,14 +693,28 @@ function Map:dijkstra(start, neighborhood)
         if not checked[tostring(x)..','..tostring(y)] then
           if self.map[x][y] ~= 1 then
             table.insert(to_check, {x=x, y=y})
-
-            map.map[x][y] = math.min(map.map[x][y], minimum_distance_value+1)
+            minimum_distance_value = math.min(minimum_distance_value, map.map[x][y]+1)
+            map.map[x][y] = math.min(minimum_distance_value + 1, map.map[x][y])
           end
         end
 
 
       end
     end
+
+    --[[
+    for k, v in pairs(neighbors) do
+      local x, y = x+v[1], y+v[2]
+
+      if self.map[x] and self.map[x][y] then
+          if self.map[x][y] ~= 1 then
+            map.map[x][y] = math.min(minimum_distance_value + 1, map.map[x][y])
+          end
+      end
+    end
+    --]]
+
+    map.map[x][y] = minimum_distance_value
 
     checked[tostring(x)..','..tostring(y)] = true
 
