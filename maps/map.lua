@@ -131,180 +131,11 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     return matches
   end
 
-  local function segmentVsSegment(x1, y1, x2, y2, x3, y3, x4, y4)
-    local dx1, dy1 = x2 - x1, y2 - y1
-    local dx2, dy2 = x4 - x3, y4 - y3
-    local dx3, dy3 = x1 - x3, y1 - y3
-    local d = dx1*dy2 - dy1*dx2
-
-    if d == 0 then
-        return false
-    end
-    local t1 = (dx2*dy3 - dy2*dx3)/d
-    if t1 < 0 or t1 > 1 then
-        return false
-    end
-    local t2 = (dx1*dy3 - dy1*dx3)/d
-    if t2 < 0 or t2 > 1 then
-        return false
-    end
-
-    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
- 
-    --
-    if not ((x1 ~= x3) and (y1 ~= y3) and (x2 ~= x4) and (y2 ~= y4)) then -- if they have the same points
-      return false
-    end
-    if not ((x1 ~= x4) and (y1 ~= y4) and (x2 ~= x3) and (y2 ~= y3)) then -- if they have the same points
-      return false
-    end
-    --]]
-
-
-
-    return true, intersect_x, intersect_y
-  end
-
-  local function segment_intersection(p1, q1, p2, q2)
-
-    local function sort_by_closest_to_origin(p, q)
-      if p.x < q.x then
-        return p, q
-      elseif p.x == q.x then
-        if p.y < q.y then
-          return p, q
-        elseif p.y == q.y then
-          assert()
-        else
-          return q, p
-        end
-      else
-        return q, p
-      end
-    end
-
-    local p1, q1 = sort_by_closest_to_origin(p1, q1)
-    local p2, q2 = sort_by_closest_to_origin(p2, q2)
-
-    --[[
-    function sign(n) return n>0 and 1 or n<0 and -1 or 0 end
-    local dx1, dy1 = p1.x-q1.x, p1.y-q1.y
-    local dx2, dy2 = p2.x-q2.x, p2.y-q2.y
-    
-    dx1, dy1 = math.abs(sign(dx1)), math.abs(sign(dy1))
-    dx2, dy2 = math.abs(sign(dx2)), math.abs(sign(dy2))
-    
-    p1 = {x = p1.x - dx1, y = p1.y - dy1}
-    q1 = {x = q1.x + dx1, y = q1.y + dy1}
-    p2 = {x = p2.x - dx2, y = p2.y - dy2}
-    q2 = {x = q2.x + dx2, y = q2.y + dy2}
-    --]]
-
-    local function on_segment(p, q, r)
-      if (
-        q.x <= math.max(p.x, r.x) and q.x >= math.min(p.x, r.x) and
-        q.y <= math.max(p.y, r.y) and q.y >= math.min(p.y, r.y)
-      )
-      then
-        return true
-      else
-        return false
-      end
-    end
-
-    local function orientation(p, q, r)
-      local val = (
-        (q.y - p.y) * (r.x - q.x) -
-        (q.x - p.x) * (r.y - q.y)
-      )
-
-      if (val == 0) then return 0 end
-
-      return (val > 0) and 1 or 2
-    end
-
-    local o1 = orientation(p1, q1, p2)
-    local o2 = orientation(p1, q1, q2)
-    local o3 = orientation(p2, q2, p1)
-    local o4 = orientation(p2, q2, q1)
-
-
-    if (o1 ~= o2 and o3 ~= o4) then
-      --print('uuu')
-      --return true
-    end
-
-    if (o1 == 0 and on_segment(p1, p2, q1)) then 
-      --print('aaa')
-      --return true
-    end
-    if (o2 == 0 and on_segment(p1, q2, q1)) then 
-      --print('eee')
-      --return true
-    end
-    if (o3 == 0 and on_segment(p1, p2, q1)) then 
-      --print('ooo')
-      --return true
-    end
-    if (o4 == 0 and on_segment(p1, p2, q1)) then 
-      --print('iii')
-      --return true
-    end
-
-    --print('wow')
-
-    return false
-  end
-
-  local function point_cast(x1, y1, x2, y2, x3, y3, x4, y4)
-    local dx1, dy1 = x2 - x1, y2 - y1
-    local dx2, dy2 = x4 - x3, y4 - y3
-    local dx3, dy3 = x1 - x3, y1 - y3
-    local d = dx1*dy2 - dy1*dx2
-
-    if d == 0 then
-        return false
-    end
-    local t1 = (dx2*dy3 - dy2*dx3)/d
-    if t1 < 0 or t1 > 1 then
-        return false
-    end
-    local t2 = (dx1*dy3 - dy1*dx3)/d
-    if t2 < 0 or t2 > 1 then
-        return false
-    end
-
-    local intersect_x, intersect_y = x1 + t1*dx1, y1 + t1*dy1
-
-    if x1 == intersect_x and y1 == intersect_y then
-      return false
-    end
-    if x2 == intersect_x and y2 == intersect_y then
-      return false
-    end
-    if x3 == intersect_x and y3 == intersect_y then
-      return false
-    end
-    if x4 == intersect_x and y4 == intersect_y then
-      return false
-    end
-
-
-    return true, intersect_x, intersect_y
-  end
-
-  local edges_1 = map_1:find_edges()
-  local edges_2 = map_2:find_edges()
-
-  local matches = getMatches(edges_1, edges_2)
-  local matches_without_intersections = {}
-
   local function does_intersect(v, edges_1, edges_2, offset)
     local is_intersects = false
 
     local subject = edges_1
 
-    --
     local clip = Clipper.Path(1000)
     local i = 0
     for _, v in ipairs(edges_2) do
@@ -321,53 +152,16 @@ function Map:find_merge_point_between_maps(map_1, map_2)
     clipper:AddPath(clip, Clipper.ptClip, true)
     clipper:Execute(Clipper.ctDifference, solution)
 
-    --print(Clipper.Area(solution[0]) == Clipper.Area(subject))
-
     return (Clipper.Area(solution[0]) ~= Clipper.Area(subject))
   end
 
-  local function does_ray_intersect_with_polygon(point, polygon, map)
-    local is_intersect, intersect_x, intersect_y
-    
-    for i, segment in ipairs(polygon) do
+  local edges_1 = map_1:find_edges()
+  local edges_2 = map_2:find_edges()
 
-      local x1, y1 = point.x, point.y
-      local x2, y2 = point.x+map.width, point.y
+  local matches = getMatches(edges_1, edges_2)
+  local matches_without_intersections = {}
 
-      local x3, y3 = segment[1].x, segment[1].y
-      local x4, y4 = segment[#segment].x, segment[#segment].y
-
-
-      is_intersect, intersect_x, intersect_y = point_cast(x1,y1, x2,y2, x3,y3, x4,y4)
-      if is_intersect then
-        break 
-      end
-    end
-
-    return is_intersect, intersect_x, intersect_y
-  end
-
-  local function does_lie_inside(v, map, polygon_1, polygon_2, offset)
-    local point = {x = polygon_2[2][1].x+offset.x, y = polygon_2[2][1].y+offset.y } --random point from polygon_2
-    local num_of_intersections = 0
-    while true do
-      local is_intersect, intersect_x, intersect_y = does_ray_intersect_with_polygon(point, polygon_1, map)
-      if is_intersect == false then
-        break
-      else
-        num_of_intersections = num_of_intersections + 1
-        point = {x = intersect_x, y = intersect_y} -- use new intersection as basis
-      end
-    end
-
-    if num_of_intersections % 2 == 0 then
-      return false
-    else
-      return true
-    end
-  end
-
-  local subject = Clipper.Path(1000)
+  local subject = Clipper.Path(10000)
   local i = 0
   for _, v in ipairs(edges_1) do
     for _, v2 in ipairs(v) do
@@ -375,11 +169,13 @@ function Map:find_merge_point_between_maps(map_1, map_2)
       i = i + 1
     end
   end
+  local offset
   for i, v in ipairs(matches) do
-    local offset = {x = v[1][2].x - v[2][2].x, y = v[1][2].y - v[2][2].y}
+    local segment_index_1 = math.random(2, #v[1]-1)
+    local segment_index_2 = math.random(2, #v[2]-1)
+    local offset = {x = v[1][segment_index_1].x - v[2][segment_index_2].x, y = v[1][segment_index_1].y - v[2][segment_index_2].y}
     if (not does_intersect(v, subject, edges_2, offset)) then
-      table.insert(matches_without_intersections, v)
-      --break
+      table.insert(matches_without_intersections, {v, segment_index_1, segment_index_2})
     end
   end
 
@@ -388,9 +184,11 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   assert(#matches > 0, "no matches found")
   local match_index = math.random(1, #matches)
   local match = matches[match_index]
+  local segment_index_1 = match[2]
+  local segment_index_2 = match[3]
 
-  local x1, y1 = match[1][2].x, match[1][2].y
-  local x2, y2 = (match[1][2].x - match[2][2].x), (match[1][2].y - match[2][2].y)
+  local x1, y1 = match[1][1][segment_index_1].x, match[1][1][segment_index_1].y
+  local x2, y2 = (match[1][1][segment_index_1].x - match[1][2][segment_index_2].x), (match[1][1][segment_index_1].y - match[1][2][segment_index_2].y)
 
   return x1, y1, x2, y2
 end
@@ -510,7 +308,7 @@ function Map:new_from_outline()
     for y = 0, outline_map.height do
       local is_adjacent_to_air = false
 
-      for k, v in pairs(Map:getNeighborhood('vonNeuman')) do
+      for k, v in pairs(Map:getNeighborhood('moore')) do
         if outline_map.map[x+v[1]] and outline_map.map[x+v[1]][y+v[2]] == 0 then
           is_adjacent_to_air = true
           break
@@ -544,7 +342,7 @@ function Map:new_from_outline_strict()
     local current_tile = table.remove(to_check)
     local x, y = current_tile[1], current_tile[2]
     
-    for k, v in pairs(Map:getNeighborhood('vonNeuman')) do
+    for k, v in pairs(Map:getNeighborhood('moore')) do
       local x, y = x+v[1], y+v[2]
 
       if self.map[x] then
@@ -586,8 +384,9 @@ function Map:find_edges()
   local edges = {{startPos}}
 
   local moore = Map:getNeighborhood('moore')
-  --local winding = {moore.e, moore.s, moore.n, moore.w}
-  local winding = {moore.e, moore.se, moore.s, moore.sw, moore.w, moore.nw, moore.n, moore.ne}
+  local vonNeuman = Map:getNeighborhood('vonNeuman')
+  local winding = {vonNeuman.e, vonNeuman.s, vonNeuman.w, vonNeuman.n}
+  --local winding = {moore.e, moore.se, moore.s, moore.sw, moore.w, moore.nw, moore.n, moore.ne}
 
   while true do
     local edge = edges[#edges] -- Current edge is the last element
