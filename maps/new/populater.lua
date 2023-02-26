@@ -15,7 +15,11 @@ local function New(level)
     for i, v in ipairs(map.map) do
       for i2, v2 in ipairs(v) do
         if type(v2) == 'string' then
-          spawn_actor(actors[v2](), i, i2)
+          if game[v2] == 'nil' then
+            spawn_actor(actors[v2](), i, i2)
+          else
+            spawn_actor(game[v2], i, i2)
+          end
         end
       end
     end
@@ -40,12 +44,8 @@ local function New(level)
     end
   end
 
-  --local coloredtile = actors.Coloredtile()
-  --coloredtile.color[1] = 1
-  --spawn_actor(coloredtile, 3, 3)
-
-  draw_heat_map()
-  spawn_actor(game.Player, 3, 3)
+  --draw_heat_map()
+  --spawn_actor(game.Player, 3, 3)
 
 
   spawn_actors()

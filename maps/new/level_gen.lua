@@ -7,6 +7,15 @@ local Level = Object:extend()
 function Level:__new()
 end
 
+local function start()
+  local room = Map:new(4, 4, 1)
+  room:clearArea(1,1, room.width-1, room.height-1)
+
+  room.map[2][2] = 'Player'
+
+  return room
+end
+
 local function clearing()
   local width, height
 
@@ -55,9 +64,18 @@ function Level:create()
 
   local merged_room
   
-  --
-  for i = 1, 1 do
-    local room = rect(10, 10, 10, 10)
+  local room = start()
+  --room = room:new_from_outline()
+  if merged_room == nil then
+    merged_room = room
+  else
+    merged_room = Map:merge_maps(merged_room, room)
+  end
+
+
+  --[[
+  for i = 1, 10 do
+    local room = rect(10, 10, 20, 20)
     room = room:new_from_outline()
 
     if merged_room == nil then
@@ -94,16 +112,12 @@ function Level:create()
   end
   --]]
 
-
-
-  -- I'll likely need a function to fill "holes": air tiles surrounded by wall times
-
   map:copy_map_onto_self_at_position(merged_room, 0, 0)
 
   local heat_map = Map:new(1000, 1000, 0)
   heat_map:copy_map_onto_self_at_position(map, 0, 0)
 
-  heat_map = heat_map:dijkstra({{x = 2, y = 2}}, 'moore')
+  --heat_map = heat_map:dijkstra({{x = 2, y = 2}}, 'moore')
 
   return map, heat_map
 end

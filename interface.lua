@@ -128,12 +128,12 @@ function Interface:draw()
           else
             finalColor = lightCol
           end
-          self:writeOffset(fov[x][y] == 0 and Tiles["floor"] or Tiles["wall"], x, y, finalColor)
+          self:writeOffset(fov[x][y] ~= 1 and Tiles["floor"] or Tiles["wall"], x, y, finalColor)
         else
-          self:writeOffset(fov[x][y] == 0 and Tiles["floor"] or Tiles["wall"], x, y, ambientColor)
+          self:writeOffset(fov[x][y] ~= 1 and Tiles["floor"] or Tiles["wall"], x, y, ambientColor)
         end
       elseif explored[x] and explored[x][y] and shouldDrawExplored(explored, x, y) then
-        self:writeOffset(explored[x][y] == 0 and Tiles["floor"] or Tiles["wall"], x, y, ambientColor)
+        self:writeOffset(explored[x][y] ~= 1 and Tiles["floor"] or Tiles["wall"], x, y, ambientColor)
       end
     end
   end
