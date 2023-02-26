@@ -1,44 +1,11 @@
 local Object = require "object"
+local Map = Object:extend()
 
 local lib_path = love.filesystem.getWorkingDirectory() .. '/maps/clipper'
-print(lib_path)
 local extension = jit.os == 'Windows' and 'dll' or jit.os == 'Linux' and 'so' or jit.os == 'OSX' and 'dylib'
 package.cpath = string.format('%s;%s/?.%s', package.cpath, lib_path, extension)
 local Clipper = require('maps/clipper/clipper')
 
---[[
-local subject, clip, solution
-subject = Clipper.Path(4)
-subject[0] = Clipper.IntPoint(0,0)
-subject[1] = Clipper.IntPoint(0,1)
-subject[2] = Clipper.IntPoint(1,0)
-
-
-clip = Clipper.Path(4)
-clip[0] = Clipper.IntPoint(0+100,0+100)
-clip[1] = Clipper.IntPoint(0+100,1+100)
-clip[2] = Clipper.IntPoint(1+100,0+100)
-
-
-
---print(Clipper.Area(clip))
-solution = Clipper.Paths(1)
-print(Clipper.Area(solution[0]))
-
-
-local clipper = Clipper.Clipper()
-clipper:AddPath(subject, Clipper.ptSubject, true)
-clipper:AddPath(clip, Clipper.ptClip, true)
-clipper:Execute(Clipper.ctIntersection, solution)
-
-print(Clipper.Area(solution[0]))
-
-
---]]
-
-
- 
-local Map = Object:extend()
 
 function Map:new(width, height, value)
 	local o = {}
@@ -47,7 +14,6 @@ function Map:new(width, height, value)
 	o:init(width, height, value)
 	return o
 end
-
 function Map:init(width, height, value)
     local map = {}
 
@@ -315,7 +281,7 @@ function Map:new_from_outline()
         end
       end
 
-      if not is_adjacent_to_air then -- if not adjacent to air
+      if not is_adjacent_to_air then
         outline_map.map[x][y] = 999 -- dummy value
       end
     end
@@ -628,15 +594,16 @@ function Map:spacePropogation(value, neighborhood, cell, size)
   recurse(cell, size)
 end
 
-function Map:dijkstra(set, neighborhood)
+function Map:dijkstra(start, neighborhood)
   local neighborhood = neighborhood or "vonNeuman"
-  local neighbors = self:getNeighborhood(neighborhood)
-  local map = self:newMap(999)
+  local neighbors = Map:getNeighborhood(neighborhood)
+  local map = Map:new(self.width, self.height, 999)
   local traveled = {}
 
-  for i, v in ipairs(set) do
-    map[v.x][v.y] = 0
+  for i, v in ipairs(start) do
+    map.map[v.x][v.y] = 0
   end
+  --print(map.map[start[1].x][start[1].y])
 
   local function isWall(x, y)
     return self.map[x][y] == 1
@@ -655,20 +622,23 @@ function Map:dijkstra(set, neighborhood)
   end
 
   local function getLeast(mdp, x, y)
-    if mdp.v > map[x][y] then
-      return {v = map[x][y], x=x,y=y}
+    if mdp.v > map.map[x][y] then
+      return {v = map.map[x][y], x=x,y=y}
     else
       return mdp
     end
   end
 
+  local cycles = 0
   while true do
+    cycles = cycles+1
+    print(cycles)
     local minimumDistancePos = {v = 999}
     local mdp = minimumDistancePos
 
 
-    for x = 1, self.width do
-      for y = 1, self.height do
+    for x = 0, self.width do
+      for y = 0, self.height do
         if not isWall(x, y) then
           if not isTraveled(x, y) then
             mdp = getLeast(mdp, x, y)
@@ -686,9 +656,9 @@ function Map:dijkstra(set, neighborhood)
 
     for _, v in pairs(neighbors) do
       local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
-      if self:posIsInMap(newPos.x, newPos.y) then
+      if self.map[newPos.x] and self.map[newPos.x][newPos.y] then
         if not isWall(newPos.x, newPos.y) then
-          map[newPos.x][newPos.y] = math.min(mdp.v + 1, map[newPos.x][newPos.y])
+          map.map[newPos.x][newPos.y] = math.min(mdp.v + 1, map.map[newPos.x][newPos.y])
         end
       end
     end
@@ -696,6 +666,51 @@ function Map:dijkstra(set, neighborhood)
   end
 
   return map, traveled
+end
+
+function Map:dijkstra(start, neighborhood)
+  local neighborhood = neighborhood or "vonNeuman"
+  local neighbors = Map:getNeighborhood(neighborhood)
+  local map = Map:new(self.width, self.height, 999)
+
+  for i, v in ipairs(start) do
+    map.map[v.x][v.y] = 0
+  end
+
+  local to_check = start
+  local checked = {}
+
+  while true do
+    local current_tile = table.remove(to_check)
+    local x, y = current_tile.x, current_tile.y
+    local minimum_distance_value = map.map[x][y]
+    
+    for k, v in pairs(neighbors) do
+      local x, y = x+v[1], y+v[2]
+
+      if self.map[x] and self.map[x][y] then
+
+        if not checked[tostring(x)..','..tostring(y)] then
+          if self.map[x][y] ~= 1 then
+            table.insert(to_check, {x=x, y=y})
+
+            map.map[x][y] = math.min(map.map[x][y], minimum_distance_value+1)
+          end
+        end
+
+
+      end
+    end
+
+    checked[tostring(x)..','..tostring(y)] = true
+
+
+    if #to_check == 0 then
+      break
+    end 
+  end
+
+  return map
 end
 
 

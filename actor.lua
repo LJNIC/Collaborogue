@@ -14,7 +14,12 @@ Actor.conjugate = true
 Actor.heshe = "it"
 Actor.aan = "a"
 
-function Actor:__new()
+function Actor:__new(custom)
+
+  if custom then
+    self.color = custom.color or Actor.color
+  end
+
   self.position = Vector2(1, 1)
   self.lposition = self.position
 

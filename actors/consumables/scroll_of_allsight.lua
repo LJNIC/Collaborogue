@@ -27,8 +27,8 @@ function Read:perform(level)
 
   self.owner:applyCondition(Scrying())
 
-  for x = 1, level.width do
-    for y = 1, level.height do
+  for x = 0, level.width do
+    for y = 0, level.height do
       if not self.owner.explored[x] then self.owner.explored[x] = {} end
       self.owner.explored[x][y] = level.map[x][y]
     end
