@@ -175,19 +175,19 @@ function Map:merge_maps(map_1, map_2)
   local map_length = map_1_max_length + map_2_max_length
   local map = Map:new(map_length*2, map_length*2, 0)
 
-  local offset_x, offset_y = map_2.width, map_2.height
-
-  map:copy_map_onto_self_at_position(map_1, offset_x, offset_y, false)
-  map:copy_map_onto_self_at_position(map_2, x2+offset_x, y2+offset_y, false)
-  :set_point(x1+offset_x, y1+offset_y, 'Door')
-  --:clearPoint(x1+offset_x, y1+offset_y)
+  map:copy_map_onto_self_at_position(map_1, map_2.width, map_2.height, false)
+  map:copy_map_onto_self_at_position(map_2, x2+map_2.width, y2+map_2.height, false)
+  :set_point(x1+map_2.width, y1+map_2.height, 'Door')
 
   local left, right, top, bottom = map:get_padding()
   
   local map = map:new_from_trim_edges(left-1, right-1, top-1, bottom-1)
   -- there needs to be an overlap check here
 
-  return map
+  local offset_1 = {x = map_2.width-(left-1), y = map_2.height-(top-1)}
+  local offset_2 = {x = map_2.width-(left-1), y = map_2.height-(top-1)}
+
+  return map, offset_1, offset_2
 end
 
 function Map:get_padding()
@@ -267,6 +267,7 @@ end
 
 function Map:new_from_outline()
   local padding = 1
+  local offset = {x = padding, y = padding}
   local outline_map = Map:new(self.width+padding*2, self.height+padding*2, 1)
   :copy_map_onto_self_at_position(self, padding, padding, true)
   
@@ -295,7 +296,7 @@ function Map:new_from_outline()
     end
   end
 
-  return outline_map
+  return outline_map, offset
 end
 
 function Map:new_from_outline_strict()

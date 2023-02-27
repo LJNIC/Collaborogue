@@ -1,4 +1,9 @@
 --love.math.setRandomSeed(0)
+
+-- TODO: create a actor list of name and location separate from the map so they don't collide
+-- Actors can be a part of the map, and the actor list can be combined in the usual way
+-- vec2
+
 local Map = require "maps.map"
 local Object = require "object"
 
@@ -61,11 +66,23 @@ end
 
 function Level:create()
   local map = Map:new(1000, 1000, 0)
+  local rooms = {
+    maps = {},
+    insert = function (self, map, offset, offset_1, offset_2)
+      for k, v in pairs(self.maps) do
+        v.offset.x = v.offset.x + offset_1.x
+        v.offset.y = v.offset.y + offset_1.y
+      end
+      
+      table.insert(self.maps, {map = map, offset = {x = offset.x + offset_2.x, y = offset.y + offset_2.y}})
+    end
+  }
 
   local merged_room
-  
+
   local room = start()
-  --room = room:new_from_outline()
+  room, offset = room:new_from_outline()
+  rooms:insert(room, offset, {x=0,y=0}, {x=0,y=0})
   if merged_room == nil then
     merged_room = room
   else
@@ -73,15 +90,16 @@ function Level:create()
   end
 
 
-  --[[
-  for i = 1, 10 do
-    local room = rect(10, 10, 20, 20)
-    room = room:new_from_outline()
+  --
+  for i = 1, 1 do
+    local room = rect(5, 5, 15, 15)
+    room, offset = room:new_from_outline()
 
     if merged_room == nil then
       merged_room = room
     else
-      merged_room = Map:merge_maps(merged_room, room)
+      merged_room, offset_1, offset_2 = Map:merge_maps(merged_room, room)
+      rooms:insert(merged_room, offset, offset_1, offset_2)
     end
   end
   --]]
@@ -117,9 +135,29 @@ function Level:create()
   local heat_map = Map:new(1000, 1000, 0)
   heat_map:copy_map_onto_self_at_position(map, 0, 0)
 
-  --heat_map = heat_map:dijkstra({{x = 2, y = 2}}, 'moore')
 
-  return map, heat_map
+  heat_map = heat_map:dijkstra({{x = 2+rooms.maps[1].offset.x, y = 2+rooms.maps[1].offset.y}}, 'moore')
+
+  for i, v in ipairs(heat_map.map) do
+    for i2, v2 in ipairs(v) do
+      if v2 == 999 then
+        --map.map[i][i2] = 1
+      end
+    end
+  end
+
+  do
+    local room = rooms.maps[1].map.map
+    local offset = rooms.maps[1].offset
+    --map.map[1+offset.x][1+offset.y] = 'Glowshroom'
+    for i, v in ipairs(map) do
+      for i2, v2 in ipairs(v) do
+        --map.map[i+offset.x][i2+offset.y] = 'Coloredtile'
+      end
+    end
+  end
+
+  return map, heat_map, rooms
 end
 
 

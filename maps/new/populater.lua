@@ -15,7 +15,7 @@ local function New(level)
     for i, v in ipairs(map.map) do
       for i2, v2 in ipairs(v) do
         if type(v2) == 'string' then
-          if game[v2] == 'nil' then
+          if game[v2] == nil then
             spawn_actor(actors[v2](), i, i2)
           else
             spawn_actor(game[v2], i, i2)
@@ -29,11 +29,12 @@ local function New(level)
     for i, v in ipairs(heat_map.map) do
       for i2, v2 in ipairs(v) do
         if v2 ~= 999 then
+          local color_modifier = v2*10
           local custom = {
             color = {
-              v2*15/255,
-              v2*15/255,
-              v2*15/255,
+              math.max(0, (255-color_modifier)/255),
+              0/255,
+              math.max(0, (0+color_modifier)/255),
               1
             }
           }
@@ -44,8 +45,7 @@ local function New(level)
     end
   end
 
-  --draw_heat_map()
-  --spawn_actor(game.Player, 3, 3)
+  draw_heat_map()
 
 
   spawn_actors()
