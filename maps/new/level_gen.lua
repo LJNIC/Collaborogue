@@ -2,10 +2,10 @@
 
 -- TODO: create a actor list of name and location separate from the map so they don't collide
 -- Actors can be a part of the map, and the actor list can be combined in the usual way
--- vec2
 
 local Map = require "maps.map"
 local Object = require "object"
+local vec2 = require "vector"
 
 local Level = Object:extend()
 
@@ -68,13 +68,12 @@ function Level:create()
   local map = Map:new(1000, 1000, 0)
   local rooms = {
     maps = {},
-    insert = function (self, map, offset, offset_1, offset_2)
+    insert = function (self, map, offset_1, offset_2)
       for k, v in pairs(self.maps) do
-        v.offset.x = v.offset.x + offset_1.x
-        v.offset.y = v.offset.y + offset_1.y
+        v.offset = v.offset + offset_1
       end
       
-      table.insert(self.maps, {map = map, offset = {x = offset.x + offset_2.x, y = offset.y + offset_2.y}})
+      table.insert(self.maps, {map = map, offset = offset_2})
     end
   }
 
@@ -82,56 +81,30 @@ function Level:create()
 
   local room = start()
   room, offset = room:new_from_outline()
-  rooms:insert(room, offset, {x=0,y=0}, {x=0,y=0})
   if merged_room == nil then
     merged_room = room
+    rooms:insert(room, vec2(0, 0), offset)
   else
-    merged_room = Map:merge_maps(merged_room, room)
+    merged_room, offset_1, offset_2 = Map:merge_maps(merged_room, room)
+    offset_2 = offset_2 + offset
+    rooms:insert(merged_room, offset_1, offset_2)
   end
 
 
-  --
-  for i = 1, 1 do
-    local room = rect(5, 5, 15, 15)
+  for i = 1, 10 do
+    local room = clearing()--rect(5, 5, 15, 15)
     room, offset = room:new_from_outline()
 
     if merged_room == nil then
       merged_room = room
     else
       merged_room, offset_1, offset_2 = Map:merge_maps(merged_room, room)
-      rooms:insert(merged_room, offset, offset_1, offset_2)
+      offset_2 = offset_2 + offset
+      rooms:insert(merged_room, offset_1, offset_2)
     end
   end
-  --]]
-
-  --[[
-  for i = 1, 20 do
-    local room = rect(5, 5, 10, 10)
-    room = room:new_from_outline()
-
-    if merged_room == nil then
-      merged_room = room
-    else
-      merged_room = Map:merge_maps(merged_room, room)
-    end
-  end
-  --]]
-
-  --[[
-  for i = 1, 5 do
-    local room = clearing()
-    room = room:new_from_outline()
-
-    if merged_room == nil then
-      merged_room = room
-    else
-      merged_room = Map:merge_maps(merged_room, room)
-    end
-  end
-  --]]
 
   map:copy_map_onto_self_at_position(merged_room, 0, 0)
-
   local heat_map = Map:new(1000, 1000, 0)
   heat_map:copy_map_onto_self_at_position(map, 0, 0)
 

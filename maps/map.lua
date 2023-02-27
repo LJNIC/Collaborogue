@@ -1,6 +1,8 @@
 local Object = require "object"
 local Map = Object:extend()
 
+local vec2 = require "vector"
+
 local lib_path = love.filesystem.getWorkingDirectory() .. '/maps/clipper'
 local extension = jit.os == 'Windows' and 'dll' or jit.os == 'Linux' and 'so' or jit.os == 'OSX' and 'dylib'
 package.cpath = string.format('%s;%s/?.%s', package.cpath, lib_path, extension)
@@ -15,26 +17,28 @@ function Map:new(width, height, value)
 	return o
 end
 function Map:init(width, height, value)
-    local map = {}
+  local map = {}
 
-    for x = 0, width do
-      map[x] = {}
-      for y = 0, height do
-        map[x][y] = value
-      end
+  for x = 0, width do
+    map[x] = {}
+    for y = 0, height do
+      map[x][y] = value
     end
+  end
 
-    self.map = map
-    self.width = width
-    self.height = height
+  self.actors = {}
+  self.map = map
+  self.cells = map
+  self.width = width
+  self.height = height
 end
 
 -- Merging
 function Map:copy_map_onto_self_at_position(map, x, y, is_destructive)
   for i = x, x+map.width do
     for i2 = y, y+map.height do
-      if (is_destructive) or (self.map[i][i2] == 0) then
-        self.map[i][i2] = map.map[i-x][i2-y]
+      if (is_destructive) or (self.cells[i][i2] == 0) then
+        self.cells[i][i2] = map.cells[i-x][i2-y]
       end
     end
   end
@@ -139,7 +143,7 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   for i, v in ipairs(matches) do
     local segment_index_1 = math.random(2, #v[1]-1)
     local segment_index_2 = math.random(2, #v[2]-1)
-    local offset = {x = v[1][segment_index_1].x - v[2][segment_index_2].x, y = v[1][segment_index_1].y - v[2][segment_index_2].y}
+    local offset = vec2(v[1][segment_index_1].x - v[2][segment_index_2].x, v[1][segment_index_1].y - v[2][segment_index_2].y)
     if (not does_intersect(v, subject, edges_2, offset)) then
       table.insert(matches_without_intersections, {v, segment_index_1, segment_index_2})
     end
@@ -184,8 +188,8 @@ function Map:merge_maps(map_1, map_2)
   local map = map:new_from_trim_edges(left-1, right-1, top-1, bottom-1)
   -- there needs to be an overlap check here
 
-  local offset_1 = {x = map_2.width-(left-1), y = map_2.height-(top-1)}
-  local offset_2 = {x = map_2.width-(left-1), y = map_2.height-(top-1)}
+  local offset_1 = vec2(map_2.width-(left-1), map_2.height-(top-1))
+  local offset_2 = vec2(map_2.width-(left-1), map_2.height-(top-1))
 
   return map, offset_1, offset_2
 end
@@ -197,7 +201,7 @@ function Map:get_padding()
   for x = 0, self.width do
     local binary = false
     for y = 0, self.height do
-      if self.map[x][y] == 1 then
+      if self.cells[x][y] == 1 then
         binary = true
         break
       end
@@ -211,7 +215,7 @@ function Map:get_padding()
   for x = self.width, 0, -1 do
     local binary = false
     for y = 0, self.height do
-      if self.map[x][y] == 1 then
+      if self.cells[x][y] == 1 then
         binary = true
         break
       end
@@ -225,7 +229,7 @@ function Map:get_padding()
   for y = 0, self.height do
     local binary = false
     for x = 0, self.width do
-      if self.map[x][y] == 1 then
+      if self.cells[x][y] == 1 then
         binary = true
         break
       end
@@ -239,7 +243,7 @@ function Map:get_padding()
   for y = self.height, 0, -1 do
     local binary = false
     for x = 0, self.width do
-      if self.map[x][y] == 1 then
+      if self.cells[x][y] == 1 then
         binary = true
         break
       end
@@ -258,7 +262,7 @@ function Map:new_from_trim_edges(left, right, top, bottom)
 
   for x = left, self.width-right do
     for y = top, self.height-bottom do
-      map.map[x-left][y-top] = self.map[x][y]
+      map.cells[x-left][y-top] = self.cells[x][y]
     end
   end
 
@@ -267,7 +271,7 @@ end
 
 function Map:new_from_outline()
   local padding = 1
-  local offset = {x = padding, y = padding}
+  local offset = vec2(padding, padding)
   local outline_map = Map:new(self.width+padding*2, self.height+padding*2, 1)
   :copy_map_onto_self_at_position(self, padding, padding, true)
   
@@ -276,22 +280,22 @@ function Map:new_from_outline()
       local is_adjacent_to_air = false
 
       for k, v in pairs(Map:getNeighborhood('moore')) do
-        if outline_map.map[x+v[1]] and outline_map.map[x+v[1]][y+v[2]] == 0 then
+        if outline_map.cells[x+v[1]] and outline_map.cells[x+v[1]][y+v[2]] == 0 then
           is_adjacent_to_air = true
           break
         end
       end
 
       if not is_adjacent_to_air then
-        outline_map.map[x][y] = 999 -- dummy value
+        outline_map.cells[x][y] = 999 -- dummy value
       end
     end
   end
 
   for x = 0, outline_map.width do
     for y = 0, outline_map.height do
-      if outline_map.map[x][y] == 999 then
-        outline_map.map[x][y] = 0
+      if outline_map.cells[x][y] == 999 then
+        outline_map.cells[x][y] = 0
       end
     end
   end
@@ -312,13 +316,13 @@ function Map:new_from_outline_strict()
     for k, v in pairs(Map:getNeighborhood('moore')) do
       local x, y = x+v[1], y+v[2]
 
-      if self.map[x] then
+      if self.cells[x] then
 
         if not checked[tostring(x)..','..tostring(y)] then
-          if self.map[x][y] == 0 then
+          if self.cells[x][y] == 0 then
             table.insert(to_check, {x, y})
-          elseif self.map[x][y] == 1 then
-            outline_map.map[x][y] = 1
+          elseif self.cells[x][y] == 1 then
+            outline_map.cells[x][y] = 1
           end
         end
 
@@ -342,7 +346,7 @@ function Map:find_edges()
   local startPos
   for x = 0, self.width do
     for y = 0, self.height do
-      if self.map[x][y] == 1 then
+      if self.cells[x][y] == 1 then
         startPos = {x=x, y=y}
       end
     end
@@ -364,7 +368,7 @@ function Map:find_edges()
       then
 
         local x, y = start.x+v[1], start.y+v[2] -- Check from the starting point + a neighbor
-        if self.map[x] and self.map[x][y] == 1 then -- If that pos is a wall
+        if self.cells[x] and self.cells[x][y] == 1 then -- If that pos is a wall
           edge.vec = {v[1],v[2]} -- Define the edges vector as the neighbor direction
           table.insert(edge, {x=x,y=y}) -- insert the position
           break
@@ -376,10 +380,10 @@ function Map:find_edges()
       local x = edge[#edge].x + edge.vec[1]
       local y = edge[#edge].y + edge.vec[2]
 
-      if self.map[x] and self.map[x][y] == 1 then
+      if self.cells[x] and self.cells[x][y] == 1 then
         table.insert(edge, {x=x,y=y})
       end
-    until (not self.map[x]) or (self.map[x][y] ~= 1)
+    until (not self.cells[x]) or (self.cells[x][y] ~= 1)
 
     if -- if you reach the starting position you've done a full loop
       edge[#edge].x == startPos.x and
@@ -412,17 +416,17 @@ end
 
 --Space
 function Map:clearPoint(x,y)
-  self.map[x][y] = 0
+  self.cells[x][y] = 0
 
   return self
 end
 function Map:fillPoint(x,y)
-  self.map[x][y] = 1
+  self.cells[x][y] = 1
 
   return self
 end
 function Map:set_point(x, y, id)
-  self.map[x][y] = id
+  self.cells[x][y] = id
 
   return self
 end
@@ -577,7 +581,7 @@ end
 function Map:spacePropogation(value, neighborhood, cell, size)
   local neighborhood = self:getNeighborhood(neighborhood)
  
-  self.map[cell.x][cell.y] = value
+  self.cells[cell.x][cell.y] = value
 
   local function recurse(cell, size)
     if size > 0 then
@@ -585,7 +589,7 @@ function Map:spacePropogation(value, neighborhood, cell, size)
         local x = cell.x + v[1]
         local y = cell.y + v[2]
         if self:posIsInMap(x, y) then
-          self.map[x][y] = value
+          self.cells[x][y] = value
           recurse({x=x,y=y}, size - 1)
         end
       end
@@ -602,12 +606,11 @@ function Map:dijkstra(start, neighborhood)
   local traveled = {}
 
   for i, v in ipairs(start) do
-    map.map[v.x][v.y] = 0
+    map.cells[v.x][v.y] = 0
   end
-  --print(map.map[start[1].x][start[1].y])
 
   local function isWall(x, y)
-    return self.map[x][y] == 1
+    return self.cells[x][y] == 1
   end
 
   local function isTraveled(x, y)
@@ -623,8 +626,8 @@ function Map:dijkstra(start, neighborhood)
   end
 
   local function getLeast(mdp, x, y)
-    if mdp.v > map.map[x][y] then
-      return {v = map.map[x][y], x=x,y=y}
+    if mdp.v > map.cells[x][y] then
+      return {v = map.cells[x][y], x=x,y=y}
     else
       return mdp
     end
@@ -657,9 +660,9 @@ function Map:dijkstra(start, neighborhood)
 
     for _, v in pairs(neighbors) do
       local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
-      if self.map[newPos.x] and self.map[newPos.x][newPos.y] then
+      if self.cells[newPos.x] and self.cells[newPos.x][newPos.y] then
         if not isWall(newPos.x, newPos.y) then
-          map.map[newPos.x][newPos.y] = math.min(mdp.v + 1, map.map[newPos.x][newPos.y])
+          map.cells[newPos.x][newPos.y] = math.min(mdp.v + 1, map.cells[newPos.x][newPos.y])
         end
       end
     end
@@ -675,7 +678,7 @@ function Map:dijkstra(start, neighborhood)
   local map = Map:new(self.width, self.height, 999)
 
   for i, v in ipairs(start) do
-    map.map[v.x][v.y] = 0
+    map.cells[v.x][v.y] = 0
   end
 
   local to_check = start
@@ -684,18 +687,18 @@ function Map:dijkstra(start, neighborhood)
   while true do 
     local current_tile = table.remove(to_check)
     local x, y = current_tile.x, current_tile.y
-    local minimum_distance_value = map.map[x][y]
+    local minimum_distance_value = map.cells[x][y]
     
     for k, v in pairs(neighbors) do
       local x, y = x+v[1], y+v[2]
 
-      if self.map[x] and self.map[x][y] then
+      if self.cells[x] and self.cells[x][y] then
 
         if not checked[tostring(x)..','..tostring(y)] then
-          if self.map[x][y] ~= 1 then
+          if self.cells[x][y] ~= 1 then
             table.insert(to_check, {x=x, y=y})
-            minimum_distance_value = math.min(minimum_distance_value, map.map[x][y]+1)
-            map.map[x][y] = math.min(minimum_distance_value + 1, map.map[x][y])
+            minimum_distance_value = math.min(minimum_distance_value, map.cells[x][y]+1)
+            map.cells[x][y] = math.min(minimum_distance_value + 1, map.cells[x][y])
           end
         end
 
@@ -707,15 +710,15 @@ function Map:dijkstra(start, neighborhood)
     for k, v in pairs(neighbors) do
       local x, y = x+v[1], y+v[2]
 
-      if self.map[x] and self.map[x][y] then
-          if self.map[x][y] ~= 1 then
+      if self.cells[x] and self.cells[x][y] then
+          if self.cells[x][y] ~= 1 then
             map.map[x][y] = math.min(minimum_distance_value + 1, map.map[x][y])
           end
       end
     end
     --]]
 
-    map.map[x][y] = minimum_distance_value
+    map.cells[x][y] = minimum_distance_value
 
     checked[tostring(x)..','..tostring(y)] = true
 
@@ -787,7 +790,7 @@ function Map:aStar(x1,y1, x2,y2)
 
     for k, v in pairs(vonNeuman) do
       if self:posIsInMap(nextNode.x + v[1], nextNode.y + v[2]) then
-        if self.map[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
+        if self.cells[nextNode.x + v[1]][nextNode.y + v[2]] ~= 1 then
           local newNode = {}
           newNode.x = nextNode.x + v[1]
           newNode.y = nextNode.y + v[2]
@@ -917,7 +920,7 @@ function Map:automata2()
   table.insert(perms, mirrorX(square))
 
   local function match(x,y, comp)
-    local map = self.map
+    local map = self.cells
     local neighbors = {
       {-1,1},{0,1},{1,1},
       {-1,0},      {1,0},
@@ -941,7 +944,7 @@ function Map:automata2()
     for y = 2, self.height-1 do
       for i, v in ipairs(perms) do
         if match(x,y, v) then
-          self.map[x][y] = 1
+          self.cells[x][y] = 1
         end
       end
     end
@@ -962,7 +965,7 @@ function Map:DLAInOut()
     repeat
       x1 = love.math.random(3, self.width - 3)
       y1 = love.math.random(3, self.height - 3)
-    until self.map[x1][y1] == 0
+    until self.cells[x1][y1] == 0
 
 
     local n = 0
@@ -971,7 +974,7 @@ function Map:DLAInOut()
       x2 = x1 + neighbors[vec][1]
       y2 = y1 + neighbors[vec][2]
 
-      if self.map[x2][y2] == 1 then
+      if self.cells[x2][y2] == 1 then
         break
       else
         n = n + 1
@@ -980,7 +983,7 @@ function Map:DLAInOut()
     end
 
     if n ~= 4 then
-      self.map[x2][y2] = 0
+      self.cells[x2][y2] = 0
       break
     end
   end

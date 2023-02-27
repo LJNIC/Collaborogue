@@ -29,7 +29,7 @@ local function New(level)
     for i, v in ipairs(heat_map.map) do
       for i2, v2 in ipairs(v) do
         if v2 ~= 999 then
-          local color_modifier = v2*10
+          local color_modifier = v2*5
           local custom = {
             color = {
               math.max(0, (255-color_modifier)/255),
