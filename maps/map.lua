@@ -642,79 +642,6 @@ function Map:dijkstra(start, neighborhood)
   local neighborhood = neighborhood or "vonNeuman"
   local neighbors = Map:getNeighborhood(neighborhood)
   local map = Map:new(self.width, self.height, 999)
-  local traveled = {}
-
-  for i, v in ipairs(start) do
-    map.cells[v.x][v.y] = 0
-  end
-
-  local function isWall(x, y)
-    return self.cells[x][y] == 1
-  end
-
-  local function isTraveled(x, y)
-    local bit = false
-    for _, v in ipairs(traveled) do
-      if v.x == x and v.y == y then
-        bit = true
-        break
-      end
-    end
-
-    return bit
-  end
-
-  local function getLeast(mdp, x, y)
-    if mdp.v > map.cells[x][y] then
-      return {v = map.cells[x][y], x=x,y=y}
-    else
-      return mdp
-    end
-  end
-
-  local cycles = 0
-  while true do
-    cycles = cycles+1
-    print(cycles)
-    local minimumDistancePos = {v = 999}
-    local mdp = minimumDistancePos
-
-
-    for x = 0, self.width do
-      for y = 0, self.height do
-        if not isWall(x, y) then
-          if not isTraveled(x, y) then
-            mdp = getLeast(mdp, x, y)
-          end
-        end
-      end
-    end
-
-    if mdp.x == nil then
-      break
-    end
-
-
-    table.insert(traveled, mdp)
-
-    for _, v in pairs(neighbors) do
-      local newPos = {x = mdp.x + v[1], y = mdp.y + v[2]}
-      if self.cells[newPos.x] and self.cells[newPos.x][newPos.y] then
-        if not isWall(newPos.x, newPos.y) then
-          map.cells[newPos.x][newPos.y] = math.min(mdp.v + 1, map.cells[newPos.x][newPos.y])
-        end
-      end
-    end
-
-  end
-
-  return map, traveled
-end
-
-function Map:dijkstra(start, neighborhood)
-  local neighborhood = neighborhood or "vonNeuman"
-  local neighbors = Map:getNeighborhood(neighborhood)
-  local map = Map:new(self.width, self.height, 999)
 
   for i, v in ipairs(start) do
     map.cells[v.x][v.y] = 0
@@ -745,22 +672,9 @@ function Map:dijkstra(start, neighborhood)
       end
     end
 
-    --[[
-    for k, v in pairs(neighbors) do
-      local x, y = x+v[1], y+v[2]
-
-      if self.cells[x] and self.cells[x][y] then
-          if self.cells[x][y] ~= 1 then
-            map.map[x][y] = math.min(minimum_distance_value + 1, map.map[x][y])
-          end
-      end
-    end
-    --]]
-
     map.cells[x][y] = minimum_distance_value
 
     checked[tostring(x)..','..tostring(y)] = true
-
 
     if #to_check == 0 then
       break
