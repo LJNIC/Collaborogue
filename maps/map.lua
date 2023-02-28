@@ -26,12 +26,38 @@ function Map:init(width, height, value)
     end
   end
 
-  self.actors = {}
+  self.actors = {
+    list = {},
+    hash = {}
+  }
   self.map = map
   self.cells = map
   self.width = width
   self.height = height
 end
+
+function Map:insert_actor(actor_id, x, y)
+  local position = vec2(x, y)
+
+  table.insert(self.actors.list, {id = actor_id, pos = position})
+  self.actors.hash[tostring(position)] = self.actors.hash[tostring(position)] or {}
+  table.insert(self.actors.hash[tostring(position)], actor_id)
+
+  return self
+end
+
+--[[
+function Map:shift_actor_positions(vec)
+  for i, v in ipairs(self.actors.list) do
+    v.pos = v.pos + vec
+  end
+end
+
+
+function Map:hash(x, y)
+--      local x, y = string.match(k, "x:(%d+)y:(%d+)")
+end
+--]]
 
 -- Merging
 function Map:copy_map_onto_self_at_position(map, x, y, is_destructive)
@@ -41,6 +67,11 @@ function Map:copy_map_onto_self_at_position(map, x, y, is_destructive)
         self.cells[i][i2] = map.cells[i-x][i2-y]
       end
     end
+  end
+
+  for i, v in ipairs(map.actors.list) do
+    v.pos = v.pos + vec2(x, y)
+    table.insert(self.actors.list, v)
   end
 
   return self
@@ -181,12 +212,12 @@ function Map:merge_maps(map_1, map_2)
 
   map:copy_map_onto_self_at_position(map_1, map_2.width, map_2.height, false)
   map:copy_map_onto_self_at_position(map_2, x2+map_2.width, y2+map_2.height, false)
-  :set_point(x1+map_2.width, y1+map_2.height, 'Door')
+  :clear_point(x1+map_2.width, y1+map_2.height)
+  :insert_actor('Door', x1+map_2.width, y1+map_2.height)
 
   local left, right, top, bottom = map:get_padding()
   
   local map = map:new_from_trim_edges(left-1, right-1, top-1, bottom-1)
-  -- there needs to be an overlap check here
 
   local offset_1 = vec2(map_2.width-(left-1), map_2.height-(top-1))
   local offset_2 = vec2(map_2.width-(left-1), map_2.height-(top-1))
@@ -264,6 +295,11 @@ function Map:new_from_trim_edges(left, right, top, bottom)
     for y = top, self.height-bottom do
       map.cells[x-left][y-top] = self.cells[x][y]
     end
+  end
+
+  for i, v in ipairs(self.actors.list) do
+    v.pos = v.pos - vec2(left, top)
+    table.insert(map.actors.list, v)
   end
 
   return map
@@ -415,7 +451,7 @@ end
 
 
 --Space
-function Map:clearPoint(x,y)
+function Map:clear_point(x,y)
   self.cells[x][y] = 0
 
   return self
@@ -446,7 +482,7 @@ function Map:clearArea(x1,y1, x2,y2)
   self:targetArea(
     x1,y1, x2,y2,
     function(x,y)
-      self:clearPoint(x,y)
+      self:clear_point(x,y)
     end
   )
 
@@ -478,7 +514,7 @@ function Map:clearPerimeter(x1,y1, x2,y2)
   Map:targetPerimeter(
     x1,y1, x2,y2,
     function(x,y)
-      self:clearPoint(x, y)
+      self:clear_point(x, y)
     end
   )
 end

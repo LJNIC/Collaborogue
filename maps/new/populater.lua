@@ -25,6 +25,17 @@ local function New(level)
     end
   end
 
+  local function spawn_actors()
+    for i, v in ipairs(map.actors.list) do
+      local id, x, y = v.id, v.pos.x, v.pos.y
+      if game[id] == nil then
+        spawn_actor(actors[id](), x, y)
+      else
+        spawn_actor(game[id], x, y)
+      end
+    end
+  end
+
   local function draw_heat_map()
     for i, v in ipairs(heat_map.map) do
       for i2, v2 in ipairs(v) do
@@ -45,7 +56,7 @@ local function New(level)
     end
   end
 
-  draw_heat_map()
+  --draw_heat_map()
 
 
   spawn_actors()
