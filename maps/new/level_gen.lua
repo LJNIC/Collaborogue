@@ -102,9 +102,19 @@ function Level:create()
   map:copy_map_onto_self_at_position(merged_room, 0, 0)
 
 
+
+
+  local player_pos
+  for i, v in ipairs(map.actors.list) do
+    if v.id == 'Player' then
+      player_pos = v.pos
+      break
+    end
+  end
+
   local heat_map = Map:new(1000, 1000, 0)
   heat_map:copy_map_onto_self_at_position(map, 0, 0)
-  heat_map = heat_map:dijkstra({{x = 2+rooms.maps[1].offset.x, y = 2+rooms.maps[1].offset.y}}, 'moore')
+  heat_map = heat_map:dijkstra({player_pos}, 'moore')
   for i, v in ipairs(heat_map.map) do
     for i2, v2 in ipairs(v) do
       if v2 == 999 then

@@ -56,7 +56,7 @@ local function New(level)
     end
   end
 
-  --draw_heat_map()
+  draw_heat_map()
 
 
   spawn_actors()

@@ -191,7 +191,7 @@ function Map:find_merge_point_between_maps(map_1, map_2)
   local x1, y1 = match[1][1][segment_index_1].x, match[1][1][segment_index_1].y
   local x2, y2 = (match[1][1][segment_index_1].x - match[1][2][segment_index_2].x), (match[1][1][segment_index_1].y - match[1][2][segment_index_2].y)
 
-  return x1, y1, x2, y2
+  return x1, y1, x2, y2, match[1][1].vec
 end
 
 function Map:merge_maps(map_1, map_2)
@@ -203,7 +203,8 @@ function Map:merge_maps(map_1, map_2)
   local map_1_strict = map_1:new_from_outline_strict()
   local map_2_strict = map_2:new_from_outline_strict()
 
-  local x1, y1, x2, y2 = Map:find_merge_point_between_maps(map_1_strict, map_2_strict)
+  local x1, y1, x2, y2, vec = Map:find_merge_point_between_maps(map_1_strict, map_2_strict)
+  --print(vec[1])
 
   local map_1_max_length = math.max(map_1.width, map_1.height)
   local map_2_max_length = math.max(map_2.width, map_2.height)
@@ -213,6 +214,8 @@ function Map:merge_maps(map_1, map_2)
   map:copy_map_onto_self_at_position(map_1, map_2.width, map_2.height, false)
   map:copy_map_onto_self_at_position(map_2, x2+map_2.width, y2+map_2.height, false)
   :clear_point(x1+map_2.width, y1+map_2.height)
+  :clear_point(x1+map_2.width+vec[2], y1+map_2.height+vec[1])
+  :clear_point(x1+map_2.width-vec[2], y1+map_2.height-vec[1])
   :insert_actor('Door', x1+map_2.width, y1+map_2.height)
 
   local left, right, top, bottom = map:get_padding()
